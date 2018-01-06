@@ -1,0 +1,179 @@
+<?php
+
+namespace Http;
+
+/**
+ * Response to send to the client
+ * 
+ * @author sneppy
+ */
+class Response
+{
+	/**
+	 * @var string $content Response content (can be null)
+	 */
+	protected $content;
+	
+	/**
+	 * @var int $code http response code
+	 */
+	protected $code;
+
+	/**
+	 * @var array $headers list of headers
+	 */
+	protected $headers;
+
+	/**
+	 * Create a new response
+	 * 
+	 * @param string	$content	body of the response
+	 * @param int		$code		HTTP code of the response
+	 * @param array		$headers	set of additional headers
+	 */
+	public function __construct($content = "", $code = 200, array $headers = [])
+	{
+		$this->content = $content;
+		$this->code = $code;
+		$this->headers = $headers;
+	}
+
+	/**
+	 * Apply response
+	 */
+	public function parse()
+	{
+		// Set response code
+		http_response_code($this->code);
+
+		// Set response header
+		foreach ($this->headers as $header => $val)
+		{
+			header($header.": ".$val);
+		}
+
+		// Echo content
+		echo $this->content;
+	}
+
+	/**
+	 * Get or set content
+	 * 
+	 * @param string|null $content content to set or null to retrieve
+	 * 
+	 * @return string
+	 */
+	public function content($content = null)
+	{
+		if ($content)
+		{
+			$this->content = $content;
+		}
+
+		return $this->content;
+	}
+
+	/**
+	 * Return http code
+	 * 
+	 * @return int
+	 */
+	public function code()
+	{
+		return $this->code;
+	}
+
+	/**
+	 * Get or set header
+	 * 
+	 * If both parameters are null all headers are returned
+	 * otherwise the header identified by $name field is returned
+	 * and if $value is not null the field value is updated
+	 * 
+	 * @param string|array	$name	field name
+	 * @param string|array	$value	header value or array of field => value to set
+	 * 
+	 * @return string|array
+	 */
+	public function header($name = null, $value = null)
+	{
+		// Set
+		if ($value !== null)
+		{
+			if (is_array($value))
+			{
+				foreach ($value as $field => $val) $this->headers[$field] = $val;
+			}
+			else if (is_string($name))
+			{
+				$this->headers[$name] = $value;
+			}
+		}
+
+		// Get
+		return !$name ? $this->headers : (
+			isset($this->headers[$name]) ? $this->headers[$name] : (
+				null
+			)
+		);
+	}
+
+	/**
+	 * Return view (parse php)
+	 * 
+	 * @param string	$file		view file
+	 * @param array		$args		list of arguments available to the view
+	 * @param Request	$request	specify only if differs from current request
+	 */
+	public static function view($file, array $args = [], Request $request = null)
+	{
+		// Get request
+		$request = $request ?: Request::current();
+
+		// Capture output buffer
+		ob_start();
+		include __DIR__."/../../views/".$file.".php";
+		$content = ob_get_contents();
+		ob_end_clean();
+
+		return new Response($content);
+	}
+
+	/**
+	 * Return json content
+	 * 
+	 * @param string|object|array $content data to be converted to json
+	 * 
+	 * @return Response
+	 */
+	public static function json($content)
+	{
+		return new Response(
+			\Utils::toJson($content),
+			200, [
+				"Content-Type" => "application/json"
+			]
+		);
+	}
+
+	/**
+	 * Generate an error response
+	 * 
+	 * @param int			$code		http response code
+	 * @param string|array	$content	optional content
+	 */
+	public static function abort($code, $content = "")
+	{		
+		// Abort routing
+		http_response_code($code);
+
+		if (is_object($content) || is_array($content))
+		{
+			header("Content-Type: application/json");
+			$content = json_encode($content);
+		}
+
+		echo $content;
+		exit;
+	}
+}
