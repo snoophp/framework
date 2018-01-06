@@ -49,4 +49,25 @@ class Utils
 
 		return $val;
 	}
+
+	/**
+	 * Get or set session errors
+	 * 
+	 * @param string $err error string
+	 */
+	public static function errors($err = null)
+	{
+		// Start session
+		if (!isset($_SESSION)) session_start();
+		if ($err)$_SESSION["errors"][] = $err;
+		return isset($_SESSION["errors"]) ? $_SESSION["errors"] : [];
+	}
+
+	/**
+	 * Flush all errors
+	 */
+	public static function flushErrors()
+	{
+		if (isset($_SESSION)) unset($_SESSION["errors"]);
+	}
 }

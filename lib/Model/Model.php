@@ -163,7 +163,7 @@ class Model
 	 * 
 	 * @return array|null
 	 */
-	public function hasMany($forClass, $forColumn = null, $condition = "", $conditionParams = [])
+	public function hasMany($forClass, $forColumn = null, $condition = "", array $conditionParams = [])
 	{
 		$refTable = static::tableName();
 		$forTable = $forClass::tableName();
@@ -343,7 +343,7 @@ class Model
 	 * 
 	 * @return bool|int
 	 */
-	public static function deleteWhere($condition = null, $conditionParams = [])
+	public static function deleteWhere($condition = null, array $conditionParams = [])
 	{
 		if (!$condition)
 		{
