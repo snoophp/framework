@@ -3,7 +3,7 @@
 namespace Http;
 
 /**
- * Incoming request wrapper
+ * Http request object
  * 
  * @author sneppy
  */
@@ -35,37 +35,28 @@ class Request
 	protected $inputs = [];
 
 	/**
+	 * @var array $files request input files
+	 */
+	protected $files = [];
+
+	/**
 	 * Create a new request
 	 * 
 	 * @param string	$url		requested url
 	 * @param string	$method		request HTTP method
 	 * @param string	$time		request timestamp as string
-	 * @param array		$headers	set of additional headers
+	 * @param array		$headers	request headers
+	 * @param array		$inputs		input of the request (GET, POST data)
+	 * @param array		$files		files sent with the request
 	 */
-	public function __construct($url, $method = "GET", $time = null, array $headers = [])
+	public function __construct($url, $method = "GET", $time = null, array $headers = [], array $inputs = [], array $files = [])
 	{
-		$this->url = $url;
-		$this->method = $method;
-		$this->time = $time ?: date();
-		$this->headers = $headers;
-
-		// Set data
-		$raw = [];
-		switch ($this->method)
-		{
-			case "GET":
-				$raw = $_GET;
-				break;
-
-			case "POST":
-				$raw = $_POST;
-				break;
-
-			default:
-				parse_str(file_get_contents("php://input"), $raw);
-				break;
-		}
-		foreach ($raw as $input => $val) $this->inputs[$input] = \Utils::parseValue($val);
+		$this->url		= $url;
+		$this->method	= $method;
+		$this->time		= $time ?: date();
+		$this->headers	= $headers;
+		$this->inputs	= $inputs;
+		$this->file		= $files;
 	}
 
 	/**
@@ -134,6 +125,22 @@ class Request
 	}
 
 	/**
+	 * Return request input files
+	 * 
+	 * @param string	$name	file name or null to return whole inputs array
+	 * 
+	 * @return array|mixed
+	 */
+	public function file($name = null)
+	{
+		return !$name ? $this->files : (
+			isset($this->files[$name]) ? $this->files[$name] : (
+				null
+			)
+		);
+	}
+
+	/**
 	 * Return true if input is valid
 	 * 
 	 * @param array $rules list of input rules
@@ -157,11 +164,39 @@ class Request
 	 */
 	public static function current()
 	{
+		$url		= $_SERVER["REQUEST_URI"];
+		$method		= $_SERVER["REQUEST_METHOD"];
+		$time		= $_SERVER["REQUEST_TIME_FLOAT"];
+		$headers	= getallheaders() ?: [];
+		$inputs		= [];
+		$files		= [];
+
+		// Populate input
+		$raw = [];
+		switch ($method)
+		{
+			case "GET":
+				$raw = $_GET;
+				break;
+			case "POST":
+				$raw = $_POST;
+				break;
+			default:
+				parse_str(file_get_contents("php://input"), $raw);
+		}
+		foreach ($raw as $input => $val) $inputs[$input] = \Utils::parseValue($val);
+
+		// Populate files
+		foreach ($_FILES as $name => $file) $files[$name] = $file;
+
+		// Return request
 		return new Request(
-			$_SERVER["REQUEST_URI"],
-			$_SERVER["REQUEST_METHOD"],
-			$_SERVER["REQUEST_TIME_FLOAT"],
-			getallheaders() ?: []
+			$url,
+			$method,
+			$time,
+			$headers,
+			$inputs,
+			$files
 		);
 	}
 }
