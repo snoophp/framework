@@ -21,8 +21,9 @@ function autoload($className, $baseDir)
 	}
 	// Append class name
 	$filename .= str_replace("\\", "/", $className) . ".php";
+	$fullPath = __DIR__.$baseDir."/".$filename;
 	
-	include_once __DIR__.$baseDir."/".$filename;
+	if (file_exists($fullPath)) include_once $fullPath;
 }
 
 /**
@@ -45,10 +46,30 @@ function appAutoloader($className)
 	autoload($className, "/app");
 }
 
-
 // Register autoloaders
 spl_autoload_register("libAutoloader");
 spl_autoload_register("appAutoloader");
+
+use Http\Router;
+
+/**
+ * @var Router[] $routers set of routers
+ */
+$routers = [];
+
+/**
+ * Register a new router
+ * 
+ * @param Router $router router to register
+ * 
+ * @return Router
+ */
+function register_router(Router $router)
+{
+	global $routers;
+	$routers[] = $router;
+	return $router;
+}
 
 // Include configs
 foreach (glob(__DIR__."/config/*.php") as $configFile) require_once $configFile;

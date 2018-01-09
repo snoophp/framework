@@ -13,26 +13,52 @@ namespace Http;
 class Router
 {
 	/**
-	 * @var Route $routes list of configured routes
+	 * @var string $base base path to prepend
+	 */
+	protected $base;
+	
+	/**
+	 * @var Route[] $routes list of configured routes
 	 */
 	protected $routes = [];
 
 	/**
 	 * @var Callable $errorAction action executed on 404
 	 */
-	protected $errorAction;
+	protected $errorAction = null;
+
+	/**
+	 * Create a new router
+	 * 
+	 * Note that base only affects routes creation, not routes matching
+	 * 
+	 * @param string $base base path
+	 */
+	public function __construct($base = "")
+	{
+		$this->base = $base;
+	}
+
+	/**
+	 * Get router base
+	 * 
+	 * @return String
+	 */
+	public function base()
+	{
+		return $this->base;
+	}
 
 	/**
 	 * Parse request
 	 * 
 	 * @param Request $request request to handle
 	 * 
-	 * @return Response|null
+	 * @return Response|null|bool
 	 */
 	public function handle(Request $request)
 	{
-		$res = $this->match($request);
-		return $res !== false ? $res : $this->errorAction();
+		return $this->match($request);
 	}
 
 	/**
@@ -43,7 +69,7 @@ class Router
 	 * 
 	 * @return Route
 	 */
-	public function get($url, $action = null)
+	public function get($url, Callable $action = null)
 	{
 		return $this->add($url, "GET", $action);
 	}
@@ -56,7 +82,7 @@ class Router
 	 * 
 	 * @return Route
 	 */
-	public function post($url, $action = null)
+	public function post($url, Callable $action = null)
 	{
 		return $this->add($url, "POST", $action);
 	}
@@ -69,7 +95,7 @@ class Router
 	 * 
 	 * @return Route
 	 */
-	public function put($url, $action = null)
+	public function put($url, Callable $action = null)
 	{
 		return $this->add($url, "PUT", $action);
 	}
@@ -82,19 +108,22 @@ class Router
 	 * 
 	 * @return Route
 	 */
-	public function delete($url, $action = null)
+	public function delete($url, Callable $action = null)
 	{
 		return $this->add($url, "DELETE", $action);
 	}
 
 	/**
-	 * Set error action
+	 * Get or set error action
 	 * 
-	 * @param Callable $action action to be executed
+	 * @param Callable|null $action action to be executed
+	 * 
+	 * @return Callable
 	 */
-	public function errorAction($action)
+	public function errorAction(Callable $action = null)
 	{
-		$this->errorAction = $action;
+		if ($action) $this->errorAction = $action;
+		return $this->errorAction;
 	}
 
 	/**
@@ -113,9 +142,13 @@ class Router
 			if ($route->method() === $request->method() && $route->match($request->url()))
 			{
 				if ($res = $route->action()($request, $route->args())) return $res;
+
+				// Match found but no action to perform
+				return null;
 			}
 		}
 
+		// No match found
 		return false;
 	}
 
@@ -128,8 +161,9 @@ class Router
 	 * 
 	 * @return Route
 	 */
-	protected function add($url, $method, $action)
+	protected function add($url, $method, Callable $action)
 	{
+		$url = $this->base !== "" && $url === "/" ? $this->base : $this->base.$url;
 		$route = new Route($url, $method, $action);
 		$this->routes[] = $route;
 
