@@ -34,20 +34,23 @@ class Utils
 	}
 
 	/**
-	 * Parse string as value
+	 * Include view
 	 * 
-	 * @param string $val string to parse
+	 * @param string	$name	view name
+	 * @param mixed		$args	arguments to expose
 	 * 
-	 * @return mixed
+	 * @return bool
 	 */
-	public static function parseValue($val)
+	public static function view($name, ...$args)
 	{
-		$val = trim($val);
-		if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))			return strcasecmp($val, "TRUE") === 0 || strcasecmp($val, "ON") === 0;
-		else if (preg_match("/^[0-9]+$/", $val)) 					return (int)$val;
-		else if (preg_match("/^[0-9]*\.(?:[0-9]+f?|f)$/", $val))	return (float)$val;
+		$fullPath = __DIR__."/../views/".$name.".php";
+		if (file_exists($fullPath))
+		{
+			include $fullPath;
+			return true;
+		}
 
-		return $val;
+		return false;
 	}
 
 	/**
@@ -69,5 +72,59 @@ class Utils
 	public static function flushErrors()
 	{
 		if (isset($_SESSION)) unset($_SESSION["errors"]);
+	}
+
+	/**
+	 * Get path relative to public folder
+	 * 
+	 * @param string $absolutePath absolute path
+	 * 
+	 * @return string|bool
+	 */
+	public static function publicPath($absolutePath)
+	{
+		$parts = preg_split("@/public@", $absolutePath);
+		return isset($parts[1]) ? $parts[1] : false;
+	}
+
+	/**
+	 * Parse string as value
+	 * 
+	 * @param string $val string to parse
+	 * 
+	 * @return mixed
+	 */
+	public static function parseValue($val)
+	{
+		$val = trim($val);
+		if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))			return strcasecmp($val, "TRUE") === 0 || strcasecmp($val, "ON") === 0;
+		else if (preg_match("/^[0-9]+$/", $val)) 					return (int)$val;
+		else if (preg_match("/^[0-9]*\.(?:[0-9]+f?|f)$/", $val))	return (float)$val;
+
+		return $val;
+	}
+
+	/**
+	 * Check ip address against a test ip
+	 * 
+	 * Ips should be in x.y.z.x\w form, where w is the mask
+	 * 
+	 * @param string	$ip		ip address to check
+	 * @param string	$test	ip address used as test
+	 * 
+	 * @return bool
+	 */
+	public static function validateIp($ip, $test)
+	{
+			$testBytes = preg_split("@(?:\.|/)@", $test);
+			$ipBytes = preg_split("@(?:\.|/)@", $ip);
+			$test = unpack("N", pack("C*", $testBytes[0], $testBytes[1], $testBytes[2], $testBytes[3]))[1];
+			$ip = unpack("N", pack("C*", $ipBytes[0], $ipBytes[1], $ipBytes[2], $ipBytes[3]))[1];
+			if (isset($testBytes[4]) && $mask = (int)$testBytes[4])
+			{
+				$test = $test >> (32 - $mask);
+				$ip = $ip >> (32 - $mask);
+			}
+			return $test === $ip;
 	}
 }
