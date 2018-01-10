@@ -124,6 +124,8 @@ class Response
 	 * @param string	$file		view file
 	 * @param array		$args		list of arguments available to the view
 	 * @param Request	$request	specify if differs from current request
+	 * 
+	 * @return Response
 	 */
 	public static function view($file, array $args = [], Request $request = null)
 	{
