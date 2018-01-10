@@ -9,16 +9,16 @@ use Http\Router;
  * @var array $webhookConfig webhook configuration array
  */
 $webhookConfig = [
-	"webhook"	=> "Git\GitHubWebhook",
+	"url"		=> "/webhook",
+	"class"		=> "Git\GitHubWebhook",
 	"whitelist"	=> [
 		"192.30.252.0/22",
 		"185.199.108.0/22"
 	],
 	"rep_id"	=> 102726072,
-	"script"	=> __DIR__."/../webhook.sh",
 	"branch"	=> "master",
-	"url"		=> "/webhook",
-	"enabled"	=> true
+	"script"	=> __DIR__."/../webhook.sh",
+	"enabled"	=> false
 ];
 
 /***************
@@ -30,6 +30,6 @@ if ($webhookConfig["enabled"]):
 		
 		global $webhookConfig;
 		$webhookName = $webhookConfig["webhook"];
-		return ($webhookConfig["webhook"]::handle($request));
+		return ($webhookConfig["class"]::handle($request));
 	});
 endif;

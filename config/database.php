@@ -5,7 +5,7 @@
  ************************/
 
 /**
- * @var array	$dbConfig	array containing database configuration
+ * @var array $dbConfig array containing database configuration
  */
 $dbConfig = [
 	"master"	=> [
