@@ -29,12 +29,12 @@ class Put extends Curl
 	 * Create a new session with an authorization header
 	 * 
 	 * @param string	$url		request url
-	 * @param array		$put		data as an associative array
 	 * @param string	$authKey	authorization key
+	 * @param array		$put		data as an associative array
 	 * 
 	 * @return Put
 	 */
-	public static function withAuth($url, array $put = [], $authKey = "")
+	public static function withAuth($url, $authKey = "", array $put = [])
 	{
 		return new Put($url, $put, ["Authorization" => $authKey]);
 	}

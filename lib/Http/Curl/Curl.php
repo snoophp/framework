@@ -70,7 +70,7 @@ abstract class Curl
 	 * 
 	 * @param bool $keepAlive if true the session will not be closed
 	 * 
-	 * @return bool
+	 * @return bool false if execution failed, true otherwise
 	 */
 	public function exec($keepAlive = false)
 	{

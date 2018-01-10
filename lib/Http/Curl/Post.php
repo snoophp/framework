@@ -29,12 +29,12 @@ class Post extends Curl
 	 * Create a new session with an authorization header
 	 * 
 	 * @param string	$url		request url
-	 * @param array		$post		post data as an associative array
 	 * @param string	$authKey	authorization key
+	 * @param array		$post		post data as an associative array
 	 * 
 	 * @return Post
 	 */
-	public static function withAuth($url, array $post = [], $authKey = "")
+	public static function withAuth($url, $authKey = "", array $post = [])
 	{
 		return new Post($url, $post, ["Authorization" => $authKey]);
 	}
