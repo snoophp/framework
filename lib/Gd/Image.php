@@ -167,6 +167,7 @@ class Image
 	{
 		if ($this->raw)
 		{
+			$crop = $crop && $this->w !== $this->h;
 			if ($this->w > $this->h)
 			{
 				$size = $size ?: $this->h;
