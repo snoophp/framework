@@ -1,5 +1,7 @@
 <?php
 
+use Http\Request;
+
 /**
  * Set of utility methods
  * 
@@ -7,6 +9,28 @@
  */
 class Utils
 {
+	/**
+	 * Include view
+	 * 
+	 * @param string	$name		view name
+	 * @param array		$args		arguments to expose
+	 * @param Request	$request	request if differs from current request
+	 * 
+	 * @return bool
+	 */
+	public static function view($name, array $args, Request $request = null)
+	{
+		$request = $request ?: Request::current();
+		$fullPath = __DIR__."/../views/".$name.".php";
+		if (file_exists($fullPath))
+		{
+			include $fullPath;
+			return true;
+		}
+
+		return false;
+	}
+
 	/**
 	 * Convert to json string
 	 * 
@@ -31,26 +55,6 @@ class Utils
 	public static function fromJson($content, $assoc = false)
 	{
 		return json_decode($content, $assoc);
-	}
-
-	/**
-	 * Include view
-	 * 
-	 * @param string	$name	view name
-	 * @param mixed		$args	arguments to expose
-	 * 
-	 * @return bool
-	 */
-	public static function view($name, ...$args)
-	{
-		$fullPath = __DIR__."/../views/".$name.".php";
-		if (file_exists($fullPath))
-		{
-			include $fullPath;
-			return true;
-		}
-
-		return false;
 	}
 
 	/**

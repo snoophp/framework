@@ -45,7 +45,7 @@ if ($request = Request::current())
 
 		if ($match)
 		{
-			$match->errorAction()()->parse();
+			$match->errorAction()($request)->parse();
 		}
 		else
 		{

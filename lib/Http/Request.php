@@ -56,7 +56,7 @@ class Request
 		$this->time		= $time ?: date();
 		$this->headers	= $headers;
 		$this->inputs	= $inputs;
-		$this->file		= $files;
+		$this->files	= $files;
 	}
 
 	/**
