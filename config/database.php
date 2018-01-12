@@ -10,9 +10,9 @@
 $dbConfig = [
 	"master"	=> [
 		"host"		=> "localhost",
-		"schema"	=> "eventmi",
-		"username"	=> "eventmi",
-		"password"	=> "RaxSox4&"
+		"schema"	=> "snoophp",
+		"username"	=> "snoophp",
+		"password"	=> "Charlie00"
 	]
 ];
 
