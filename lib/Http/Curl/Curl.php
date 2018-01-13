@@ -206,7 +206,7 @@ abstract class Curl
 	 * 
 	 * @return int
 	 */
-	protected function parseHeader(resource $curl, $header)
+	protected function parseHeader($curl, $header)
 	{
 		if (preg_match("/^([^:\s]+)\:\s+(.*)$/", $header, $matches))
 		{
