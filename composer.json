@@ -1,8 +1,18 @@
 {
     "name": "snoophp/framework",
-    "description": "A light PHP framework inspired by Laravel",
+	"description": "A light PHP framework inspired by Laravel",
+	"keywords": [
+		"framework",
+		"snoophp",
+		"sneppy"
+	],
     "type": "library",
-    "license": "MIT",
+	"license": "MIT",
+	"minimum-stability": "dev",
+	"support": {
+		"issues": "https://github.com/snoophp/framework/issues",
+        "source": "https://github.com/snoophp/framework"
+	},
     "authors": [
         {
             "name": "Sneppy",
