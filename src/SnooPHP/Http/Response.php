@@ -151,7 +151,7 @@ class Response
 	public static function json($content)
 	{
 		return new Response(
-			\Utils::toJson($content),
+			\SnooPHP\Utils::toJson($content),
 			200, [
 				"Content-Type" => "application/json"
 			]

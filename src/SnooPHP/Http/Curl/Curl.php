@@ -93,7 +93,7 @@ abstract class Curl
 	public function content($decodeJson = false)
 	{
 		return $decodeJson && $this->lastResultType === "application/json" && $this->lastResult ?
-		\Utils::toJson($this->lastResult) :
+		\SnooPHP\Utils::toJson($this->lastResult) :
 		$this->lastResult;
 	}
 
