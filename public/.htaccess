@@ -1,4 +1,0 @@
-## Rewrite rule for Router
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule . /index.php

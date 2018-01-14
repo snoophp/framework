@@ -1,0 +1,15 @@
+{
+    "name": "snoophp/framework",
+    "description": "A light PHP framework inspired by Laravel",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sneppy",
+            "email": "andrea.mecchia@mail.polimi.it"
+        }
+    ],
+    "require": {
+		"php": ">7.0"
+	}
+}
