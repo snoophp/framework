@@ -23,6 +23,9 @@
 		"php": ">7.0"
 	},
 	"autoload": {
+		"files": [
+			"src/SnooPHP/helpers.php"
+		],
         "psr-4": {
             "SnooPHP\\": "src/SnooPHP/"
         }

@@ -23,7 +23,7 @@ class GitHubWebhook extends Webhook
 	{
 		global $webhookConfig;
 
-		$payload = \SnooPHP\Utils::fromJson($request->input("payload", "null"));
+		$payload = from_json($request->input("payload", "null"));
 		if (!$payload) Response::abort(400, [
 			"status"		=> "ERROR",
 			"description"	=> "payload not found"

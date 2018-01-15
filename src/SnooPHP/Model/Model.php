@@ -389,7 +389,7 @@ class Model
 	 */
 	public function json()
 	{
-		return \SnooPHP\Utils::toJson($this);
+		return json_encode($this);
 	}
 
 	/**

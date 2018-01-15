@@ -121,20 +121,20 @@ class Response
 	/**
 	 * Return view (parse php)
 	 * 
-	 * @param string	$file		view file
+	 * @param string	$name		view name
 	 * @param array		$args		list of arguments available to the view
 	 * @param Request	$request	specify if differs from current request
 	 * 
 	 * @return Response
 	 */
-	public static function view($file, array $args = [], Request $request = null)
+	public static function view($name, array $args = [], Request $request = null)
 	{
 		// Get request
 		$request = $request ?: Request::current();
 
 		// Capture output buffer
 		ob_start();
-		include __DIR__."/../../views/".$file.".php";
+		include path("views")."/{$name}.php";
 		$content = ob_get_contents();
 		ob_end_clean();
 
@@ -151,7 +151,7 @@ class Response
 	public static function json($content)
 	{
 		return new Response(
-			\SnooPHP\Utils::toJson($content),
+			to_json($content),
 			200, [
 				"Content-Type" => "application/json"
 			]

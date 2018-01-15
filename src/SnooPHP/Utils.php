@@ -23,7 +23,7 @@ class Utils
 	public static function view($name, array $args, Request $request = null)
 	{
 		$request = $request ?: Request::current();
-		$fullPath = __DIR__."/../views/".$name.".php";
+		$fullPath = path("views")."/{$name}.php";
 		if (file_exists($fullPath))
 		{
 			include $fullPath;
@@ -36,27 +36,30 @@ class Utils
 	/**
 	 * Convert to json string
 	 * 
+	 * @deprecated 1.0.1
+	 * 
 	 * @param mixed $content content to convert
 	 * 
 	 * @return string
 	 */
 	public static function toJson($content)
 	{
-		return is_string($content) ?
-		$content :
-		json_encode($content);
+		return to_json($content);
 	}
 
 	/**
 	 * Decode from json string
 	 * 
-	 * @param string $content content to decode
+	 * @deprecated 1.0.1
+	 * 
+	 * @param string	$content	content to decode
+	 * @param bool		$assoc		if true return array rather than object
 	 * 
 	 * @return object|array
 	 */
 	public static function fromJson($content, $assoc = false)
 	{
-		return json_decode($content, $assoc);
+		return from_json($content, $assoc);
 	}
 
 	/**
@@ -89,8 +92,13 @@ class Utils
 	 */
 	public static function publicPath($absolutePath)
 	{
-		$parts = preg_split("@/public@", $absolutePath);
-		return isset($parts[1]) ? $parts[1] : false;
+		$publicPath = path("public");
+		if (preg_match("@^{$publicPath}(.*)$@", $absolutePath, $matches))
+		{
+			return $matches[1];
+		}
+
+		return false;
 	}
 
 	/**
