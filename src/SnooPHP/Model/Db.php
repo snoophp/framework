@@ -14,13 +14,14 @@ class Db
 	 * 
 	 * @param string	$query			query string
 	 * @param array		$queryParams	query parameters
+	 * @param string	$dbName			name of the db configuration (default master)
 	 * 
 	 * @return array
 	 */
-	public static function query($queryString, array $queryParams = [])
+	public static function query($queryString, array $queryParams = [], $dbName = "master")
 	{
 		// Prepare query
-		$query = static::instance()->prepare($queryString);
+		$query = static::instance($dbName)->prepare($queryString);
 		foreach ($queryParams as $column => $val) $query->bindValue(":".$column, $val);
 
 		// Execute
@@ -35,25 +36,31 @@ class Db
 	/**
 	 * Begin database transaction
 	 * 
+	 * @param string $dbName name of the db configuration (default master)
+	 * 
 	 * @return bool
 	 */
-	public static function beginTransaction()
+	public static function beginTransaction($dbName = "master")
 	{
-		return static::instance()->beginTransaction();
+		return static::instance($dbName)->beginTransaction();
 	}
 
 	/**
 	 * Commit transaction
 	 * 
+	 * @param string $dbName name of the db configuration (default master)
+	 * 
 	 * @return bool
 	 */
-	public static function commit()
+	public static function commit($dbName = "master")
 	{
-		return static::instance()->commit();
+		return static::instance($dbName)->commit();
 	}
 
 	/**
 	 * Rollback transaction
+	 * 
+	 * @param string $dbName name of the db configuration (default master)
 	 * 
 	 * @return bool
 	 */
@@ -70,14 +77,15 @@ class Db
 	 * If attribute name is specified as an array getAttribute is called on its elements and an array is returned
 	 * If attribute name is specified its value is returned
 	 * 
-	 * @param string|array	$attributeName	attribute name (eg. ATTR_*)
-	 * @param string|array	$attributeValue	attribute value
+	 * @param int|array		$attributeName	attribute name (eg. ATTR_*)
+	 * @param mixed|array	$attributeValue	attribute value
+	 * @param string		$dbName 		name of the db configuration (default master)
 	 * 
 	 * @return bool|array
 	 */
-	public static function attribute($attributeName, $attributeValue = null)
+	public static function attribute($attributeName, $attributeValue = null, $dbName = "master")
 	{
-		$db = static::instance();
+		$db = static::instance($dbName);
 
 		// Set
 		if ($attributeValue)
@@ -110,11 +118,13 @@ class Db
 	/**
 	 * Get last database error
 	 * 
+	 * @param string $dbName name of the db configuration (default master)
+	 * 
 	 * @return array
 	 */
-	public static function lastError()
+	public static function lastError($dbName = "master")
 	{
-		return static::instance()->errorInfo();
+		return static::instance($dbName)->errorInfo();
 	}
 
 	/**

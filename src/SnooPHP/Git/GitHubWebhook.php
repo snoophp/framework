@@ -30,12 +30,15 @@ class GitHubWebhook extends Webhook
 		]);
 
 		// Allow only from known addresses
-		$allowed = false; $ip = $request->header("Remote Address");
-		foreach ($webhookConfig["whitelist"] as $test) $allowed |= static::checkIp($ip, $test);
-		if (!$allowed) Response::abort(400, [
-			"status"		=> "ERROR",
-			"description"	=> "ip not whitelisted"
-		]);
+		$allowed = false; $ip = $request->header("Remote Address") ?: ($request->header("X-Client-Ip") ?: ($request->header("X-Forwarded-For") ?: $webhookConfig["strong_ip_validation"]));
+		if ($ip !== false)
+		{
+			foreach ($webhookConfig["whitelist"] as $test) $allowed |= \SnooPHP\Utils::validateIp($ip, $test);
+			if (!$allowed) Response::abort(400, [
+				"status"		=> "ERROR",
+				"description"	=> "ip not whitelisted"
+			]);
+		}
 
 		// Check repository
 		if ($payload->repository->id !== $webhookConfig["rep_id"]) Response::abort(400, [

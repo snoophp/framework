@@ -1,6 +1,4 @@
-
-
-<p align="center"><img src="https://nofile.io/g/q2AXGcs09dRFUI84S8cFratizyzddGkqOt5CGNcdVnE3Qxcb62gSVz2Ob2BvJhaM/snoophp+%28copy%29.svg/" width="80"></p>
+<p align="center"><img src="https://image.ibb.co/mHMgrm/snoophp.png" width="80"></p>
 
 # SnooPHP
 
