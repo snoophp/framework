@@ -1,5 +1,20 @@
 <?php
 
+if (!function_exists("escape_unicode"))
+{
+	/**
+	 * Escape unicode codes in string
+	 * 
+	 * @param string	$content	string to escape
+	 * 
+	 * @return string
+	 */
+	function escape_unicode($content)
+	{
+		return preg_replace("/\\\\u/", "\\\\\\\\u", $content);
+	}
+}
+
 if (!function_exists("from_json"))
 {
 	/**
@@ -10,7 +25,7 @@ if (!function_exists("from_json"))
 	 * 
 	 * @return array|object
 	 */
-	function from_json($name)
+	function from_json($content, $assoc = false)
 	{
 		return json_decode($content, $assoc);
 	}
@@ -30,7 +45,7 @@ if (!function_exists("path"))
 		$rootDir = defined("ROOT_DIR") ? ROOT_DIR : $_SERVER["DOCUMENT_ROOT"];
 		$path = realpath($rootDir."/".$name);
 		return file_exists($path) ?
-		realpath($rootDir."/".$name) :
+		$path :
 		false;
 	}
 }
@@ -52,6 +67,21 @@ if (!function_exists("to_json"))
 	}
 }
 
+if (!function_exists("to_utf8"))
+{
+	/**
+	 * Encode content as utf8 string
+	 * 
+	 * @param string $content content to encode
+	 * 
+	 * @return string
+	 */
+	function to_utf8($content)
+	{
+		return mb_convert_encoding($content, "UTF-8");
+	}
+}
+
 if (!function_exists("view"))
 {
 	/**
@@ -62,5 +92,20 @@ if (!function_exists("view"))
 	function view($name, array $args = [], SnooPHP\Http\Request $request = null)
 	{
 		SnooPHP\Utils::view($name, $args, $request);
+	}
+}
+
+if (!function_exists("unescape_unicode"))
+{
+	/**
+	 * Unescape unicode codes in string
+	 * 
+	 * @param string $content string to unescape
+	 * 
+	 * @return string
+	 */
+	function unescape_unicode($content)
+	{
+		return preg_replace("/\\\\\\\\u/", "\\\\u", $content);
 	}
 }

@@ -418,7 +418,7 @@ class Model
 	protected function decodeValue($val, $column)
 	{
 		if (isset(static::$casts[$column]))	settype($val, static::$casts[$column]);
-		if (in_array($column, static::$jsons) && is_string($val)) $val = json_decode($val);
+		if (in_array($column, static::$jsons) && is_string($val)) $val = json_decode(unescape_unicode($val));
 		return $val;
 	}
 
@@ -432,7 +432,7 @@ class Model
 	protected function encodeValue($column)
 	{
 		return !isset($this->$column) ? null : (
-			in_array($column, static::$jsons) ? json_encode($this->$column) : (
+			in_array($column, static::$jsons) ? escape_unicode(json_encode($this->$column)) : (
 				$this->$column
 			)
 		);

@@ -138,7 +138,7 @@ class Response
 		$content = ob_get_contents();
 		ob_end_clean();
 
-		return new Response($content);
+		return new static($content);
 	}
 
 	/**
@@ -150,12 +150,42 @@ class Response
 	 */
 	public static function json($content)
 	{
-		return new Response(
+		return new static(
 			to_json($content),
 			200, [
 				"Content-Type" => "application/json"
 			]
 		);
+	}
+
+	/**
+	 * Return a resource (file)
+	 * 
+	 * Resource ares stored in the `storage` directory
+	 * 
+	 * @param string	$file	path to the resource, relativo to the storage directory
+	 * @param string	$type	MIME type of the resource
+	 * 
+	 * @return Response
+	 */
+	public static function resource($file, $type)
+	{
+		if ($path = path("storage/{$file}"))
+		{
+			ob_start();
+			readfile($path);
+			$content = ob_get_contents();
+			ob_end_clean();
+
+			return new static($content, 200, [
+				"Content-Type" => $type
+			]);
+		}
+
+		static::abort(404, [
+			"status"		=> "ERROR",
+			"description"	=> "resource not found"
+		]);
 	}
 
 	/**
