@@ -27,11 +27,11 @@ class Table
 	/**
 	 * Create a new table (doesn't run CREATE TABLE)
 	 * 
-	 * @param string $name table name
+	 * @param string $model class of the model or name of the table 
 	 */
-	public function __construct($name)
+	public function __construct($model)
 	{
-		$this->name = $name;
+		$this->name = class_exists($model) ? $model::tableName() : $model;
 	}
 
 	/**

@@ -279,7 +279,7 @@ class Model
 			$values = ""; $into = "";
 			foreach ($columns as $column)
 			{
-				if ($column !== $idColumn)
+				if ($column !== $idColumn && isset($this->$column))
 				{
 					$into .= " ".$column.",";
 					$values .= " :".$column.",";
@@ -295,7 +295,7 @@ class Model
 			");
 			foreach ($columns as $column)
 			{
-				if ($column !== $idColumn) $query->bindValue(":".$column, $this->encodeValue($column));
+				if ($column !== $idColumn && isset($this->$column)) $query->bindValue(":".$column, $this->encodeValue($column));
 			}
 
 			if ($query->execute())
@@ -407,6 +407,16 @@ class Model
 		}
 		return $out;
 	}
+	
+	/**
+	 * Return the table name
+	 * 
+	 * @return string
+	 */
+	public static function tableName()
+	{
+		return strtolower((new ReflectionClass(get_called_class()))->getShortName())."s";
+	}
 
 	/**
 	 * Convert value coming from database
@@ -446,16 +456,6 @@ class Model
 	protected static function modelName()
 	{
 		return (new ReflectionClass(get_called_class()))->getShortName();
-	}
-
-	/**
-	 * Return the table name
-	 * 
-	 * @return string
-	 */
-	protected static function tableName()
-	{
-		return strtolower((new ReflectionClass(get_called_class()))->getShortName())."s";
 	}
 
 	/**
