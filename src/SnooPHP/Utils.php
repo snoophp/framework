@@ -34,6 +34,36 @@ class Utils
 	}
 
 	/**
+	 * Include a vue component
+	 * 
+	 * @param string	$name		view name
+	 * @param array		$args		arguments to expose
+	 * @param Request	$request	request if differs from current request
+	 * 
+	 * @return bool
+	 */
+	public static function vueComponent($name, array $args, Request $request = null)
+	{
+		$request = $request ?: Request::current();
+		
+		$fullPath = path("views/components")."/$name.php";
+		if (file_exists($fullPath))
+		{
+			ob_start();
+			include $fullPath;
+			$content = ob_get_contents();
+			ob_end_clean();
+
+			// Output parsed content
+			echo \SnooPHP\Vue\Component::parse($content);
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Convert to json string
 	 * 
 	 * @deprecated 1.0.1
