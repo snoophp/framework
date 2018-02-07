@@ -141,10 +141,16 @@ class Router
 		{
 			if ($route->method() === $request->method() && $route->match($request->url()))
 			{
-				if ($res = $route->action()($request, $route->args())) return $res;
-
-				// Match found but no action to perform
-				return null;
+				if ($action = $route->action())
+				{
+					$response = $action($request, $route->args());
+					if ($response !== false) return $response;
+				}
+				else
+				{
+					// Match found but no action to perform
+					return null;
+				}
 			}
 		}
 
