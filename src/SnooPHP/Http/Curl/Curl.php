@@ -86,14 +86,14 @@ abstract class Curl
 	/**
 	 * Get curl response body
 	 * 
-	 * @param bool $decodeJson if true and return type is json decode content
+	 * @param bool $decodeJson if true and return type is json, decode content
 	 * 
 	 * @return null|bool|string
 	 */
 	public function content($decodeJson = false)
 	{
-		return $decodeJson && $this->lastResultType === "application/json" && $this->lastResult ?
-		\SnooPHP\Utils::toJson($this->lastResult) :
+		return $decodeJson && preg_match("~^application/json.*~", $this->lastResultType) && $this->lastResult ?
+		from_json($this->lastResult) :
 		$this->lastResult;
 	}
 
