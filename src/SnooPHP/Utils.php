@@ -141,9 +141,9 @@ class Utils
 	public static function parseValue($val)
 	{
 		$val = trim($val);
-		if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))			return strcasecmp($val, "TRUE") === 0 || strcasecmp($val, "ON") === 0;
-		else if (preg_match("/^[0-9]+$/", $val)) 					return (int)$val;
-		else if (preg_match("/^[0-9]*\.(?:[0-9]+f?|f)$/", $val))	return (float)$val;
+		if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))				return strcasecmp($val, "TRUE") === 0 || strcasecmp($val, "ON") === 0;
+		else if (preg_match("/^[0-9]+$/", $val) && strlen($val) < 16)	return (int)$val;
+		else if (preg_match("/^[0-9]*\.(?:[0-9]+f?|f)$/", $val))		return (float)$val;
 
 		return $val;
 	}

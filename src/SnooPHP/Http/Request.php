@@ -142,7 +142,7 @@ class Request
 
 	/**
 	 * Return true if input is valid
-	 * 
+	 *
 	 * @param array $rules list of input rules
 	 * 
 	 * @return bool
@@ -155,6 +155,21 @@ class Request
 		}
 
 		return true;
+	}
+
+	/**
+	 * Inject input (use carefully)
+	 * 
+	 * @ignore not to be used
+	 * 
+	 * @param array $inputs set of inputs to inject
+	 * 
+	 * @return Request return this request
+	 */
+	protected function injectInput($inputs)
+	{
+		$this->inputs = array_merge($this->inputs, $inputs);
+		return $this;
 	}
 
 	/**
@@ -190,7 +205,7 @@ class Request
 		foreach ($_FILES as $name => $file) $files[$name] = $file;
 
 		// Return request
-		return new Request(
+		return new static(
 			$url,
 			$method,
 			$time,

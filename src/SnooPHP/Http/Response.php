@@ -161,19 +161,20 @@ class Response
 	/**
 	 * Return a resource (file)
 	 * 
-	 * Resource ares stored in the `storage` directory
+	 * Resource are stored in the `storage` directory
 	 * 
-	 * @param string		$file	path to the resource, relativo to the storage directory
-	 * @param string|null	$type	MIME type of the resource
+	 * @param string		$file			path to the resource, relativo to the storage directory
+	 * @param string|null	$type			MIME type of the resource
+	 * @param bool			$evaluatePhp	if true php code in the resource will be evaluated before outputting the content
 	 * 
 	 * @return Response
 	 */
-	public static function resource($file, $type = null)
+	public static function resource($file, $type = null, $evaluatePhp = false)
 	{
-		if ($path = path("assets/{$file}"))
+		if ($path = path("resources/{$file}"))
 		{
 			ob_start();
-			readfile($path);
+			$evaluatePhp ? include($path) : readfile($path);
 			$content = ob_get_contents();
 			ob_end_clean();
 
