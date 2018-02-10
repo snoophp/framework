@@ -64,9 +64,9 @@ class Db
 	 * 
 	 * @return bool
 	 */
-	public static function rollBack()
+	public static function rollBack($dbName = "master")
 	{
-		return static::instance()->rollBack();
+		return static::instance($dbName)->rollBack();
 	}
 
 	/**

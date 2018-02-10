@@ -322,7 +322,7 @@ class Column
 	/**
 	 * Get column property(ies)
 	 * 
-	 * @param string $name if specified return specifi property
+	 * @param string $name if specified return property
 	 * 
 	 * @return array|string|false return false if property is not found
 	 */
@@ -343,6 +343,18 @@ class Column
 	public function notNullable()
 	{
 		return $this->set("notNullable");
+	}
+
+	/**
+	 * Explicity set this column to be nullable
+	 * 
+	 * This is require in certain situations, for example with timestamp columns
+	 * 
+	 * @return Column
+	 */
+	public function nullable()
+	{
+		return $this->set("nullable");
 	}
 
 	/**
@@ -453,11 +465,13 @@ class Column
 
 		$unsigned		= $this->property("unsigned");
 		$notNullable	= $this->property("notNullable");
+		$nullable		= $this->property("nullable");
 		$default		= $this->property("default");
 		$autoIncrement	= $this->property("autoIncrement");
 		$properties		=
 			($unsigned ? "unsigned " : "")				.
 			($notNullable ? "not null " : "")			.
+			($nullable ? "null " : "")					.
 			($default ? "default ".$default : "")		.
 			($autoIncrement ? "auto_increment " : "")	;
 
