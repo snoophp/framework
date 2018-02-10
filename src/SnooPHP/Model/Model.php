@@ -51,7 +51,7 @@ class Model
 	 * @param string	$queryString query string
 	 * @param array		$queryParams query parameters
 	 * 
-	 * @return array|bool
+	 * @return Collection|bool
 	 */
 	public static function select($queryString = "", array $queryParams = [])
 	{
@@ -63,7 +63,7 @@ class Model
 		}
 		else if (!count($rows))
 		{
-			return [];
+			return new Collection([]);
 		}
 
 		// Populate models
@@ -76,7 +76,7 @@ class Model
 			$collection[] = $model;
 		}
 		
-		return $collection;
+		return new Collection($collection);
 	}
 
 	/**
@@ -159,7 +159,7 @@ class Model
 	 * @param string	$condition			condition to append (AND) to the query (use R and F as Reference and Foreign tables)
 	 * @param array		$conditionParams	parameters to bind to the condition query
 	 * 
-	 * @return array|null
+	 * @return Collection|null
 	 */
 	public function hasMany($forClass, $forColumn = null, $condition = "", array $conditionParams = [])
 	{
@@ -180,7 +180,7 @@ class Model
 		}
 		else if (!count($rows))
 		{
-			return [];
+			return new Collection([]);
 		}
 
 		// Populate models
@@ -192,7 +192,7 @@ class Model
 			$collection[] = $forModel;
 		}
 		
-		return $collection;
+		return new Collection($collection);
 	}
 
 	/**
