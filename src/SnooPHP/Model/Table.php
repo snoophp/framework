@@ -103,6 +103,8 @@ class Table
 			}
 		}
 
+		// Remove duplicate dependencies
+		$this->dependencies = array_unique($this->dependencies);
 		return $this->dependencies;
 	}
 
@@ -194,6 +196,18 @@ class Table
 	public function uint($name, $size = 16)
 	{
 		return $this->add($name, "int")->size($size)->unsigned();
+	}
+
+	/**
+	 * Add a boolean column (using TINYINT(1))
+	 * 
+	 * @param string	$name	column name
+	 * 
+	 * @return Column
+	 */
+	public function bool($name)
+	{
+		return $this->add($name, "bool");
 	}
 
 	/**
@@ -324,13 +338,13 @@ class Column
 	 * 
 	 * @param string $name if specified return property
 	 * 
-	 * @return array|string|false return false if property is not found
+	 * @return array|string|null return null if property is not found
 	 */
 	public function property($name = null)
 	{
 		return !$name ? $this->properties : (
 			isset($this->properties[$name]) ? $this->properties[$name] : (
-				false
+				null
 			)
 		);
 	}
@@ -469,11 +483,11 @@ class Column
 		$default		= $this->property("default");
 		$autoIncrement	= $this->property("autoIncrement");
 		$properties		=
-			($unsigned ? "unsigned " : "")				.
-			($notNullable ? "not null " : "")			.
-			($nullable ? "null " : "")					.
-			($default ? "default ".$default : "")		.
-			($autoIncrement ? "auto_increment " : "")	;
+			($unsigned ? "unsigned " : "")						.
+			($notNullable ? "not null " : "")					.
+			($nullable ? "null " : "")							.
+			($default !== null ? "default {$default} " : "")	.
+			($autoIncrement ? "auto_increment " : "")			;
 
 		return trim($name)." ".trim($type)." ".trim($properties);
 	}
