@@ -154,7 +154,7 @@ class Collection
 
 		foreach ($this->models as $i => $model)
 		{
-			do $ctrl = call_user_func_array($iterator, array(&$models)); while ($ctrl === true);
+			do $ctrl = call_user_func_array($iterator, array(&$this->$models[$i], $i)); while ($ctrl === true);
 			if ($ctrl === false) break;
 		}
 
