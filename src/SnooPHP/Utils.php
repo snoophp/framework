@@ -64,6 +64,41 @@ class Utils
 	}
 
 	/**
+	 * Merge together styles and scripts blocks after body
+	 * 
+	 * @param string $content a valid html document content
+	 * 
+	 * @return string
+	 */
+	public static function optimizeView($content)
+	{
+		// Valid html only contains one body block
+		if ($pos = strpos($content, "</body>"))
+		{
+			$preBody	= substr($content, 0, $pos);		
+			$postBody	= substr($content, $pos);
+			$style		= "";
+			$script		= "";
+			
+			if (in_array("merge_blocks", env("view_optimization")))
+			{			
+				/** @todo this only works if scripts doesn't contains other '</script>' tags */
+				if (preg_match_all("~(?:<style>((?:(?!</).)*)</style>|<script>((?:(?!</sc).)*)</script>)~s", $postBody, $matches))
+				{
+					foreach ($matches[1] as $styleContent) $style .= $styleContent;
+					foreach ($matches[2] as $scriptContent) $script .= $scriptContent;
+				}
+				$postBody = preg_replace("~(?:<style>|<script>).*(?:</style>|</script>)~s", "", $postBody);
+
+				// Set merged style and script
+				$content = $preBody.preg_replace("~</body>~", "</body><style>".$style."</style><script>".$script."</script>", $postBody);
+			}
+		}
+
+		return $content;
+	}
+
+	/**
 	 * Convert to json string
 	 * 
 	 * @deprecated 1.0.1

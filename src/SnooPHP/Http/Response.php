@@ -2,6 +2,8 @@
 
 namespace SnooPHP\Http;
 
+use SnooPHP\Utils;
+
 /**
  * Response to send to the client
  * 
@@ -138,6 +140,8 @@ class Response
 		$content = ob_get_contents();
 		ob_end_clean();
 
+		$content = Utils::optimizeView($content);
+
 		return new static($content);
 	}
 
@@ -150,7 +154,6 @@ class Response
 	 */
 	public static function json($content)
 	{
-		if (is_a($content, "SnooPHP\Model\Collection")) $content = $content->array();
 		return new static(
 			to_json($content),
 			200, [
