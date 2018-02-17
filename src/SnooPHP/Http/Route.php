@@ -127,7 +127,7 @@ class Route
 		// Get argument names
 		preg_match_all("/{([^\s}]*)}/", $this->url, $args);
 		// Get values
-		$pattern = preg_replace("/{[^\s}]*}/", "([^\s/]+)", $this->url);
+		$pattern = preg_replace("/{[^\s}]*}/", "([^\s/?]+)", $this->url);
 		if (preg_match("@^".$pattern."(?:/)?(?:\?.*)?$@", $test, $vals) > 0)
 		{
 			// Fill input array
