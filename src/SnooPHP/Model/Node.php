@@ -26,13 +26,51 @@ namespace SnooPHP\Model;
 abstract class Node extends Model
 {
 	/**
+	 * @const EDGE_CONNECTION_PREFIX prefix of edge connection methods
+	 */
+	const EDGE_CONNECTION_PREFIX = "e_";
+
+	/**
 	 * Expand edges of this node
 	 * 
 	 * @param string|array|null $edges set (or string) of nodes to expand or null to expand all (use it carefully)
 	 * 
 	 * @return Node expanded node
 	 */
-	abstract public function expand($edges = null);
+	public function expand($edges = null)
+	{
+		// Get edges to expand
+		if ($edges) $edges = is_array($edges) ? $edges : static::parseEdgesString($edges);
+		if (!$edges || !is_array($edges)) return $this;
+
+		foreach ($edges as $edge => $subedges)
+		{
+			$edgeConnection = static::EDGE_CONNECTION_PREFIX.$edge;
+			if (method_exists($this, $edgeConnection))
+			{
+				$node = $this->$edgeConnection();
+
+				// Call subedges
+				if (is_a($node, "SnooPHP\Model\Node"))
+				{
+					$node->expand($subedges);
+				}
+				else if (is_a($node, "SnooPHP\Model\Collection"))
+				{
+					$node->each(function(&$node) use($subedges) {
+
+						if (is_a($node, "SnooPHP\Model\Node"))
+						{
+							$node->expand($subedges);
+						}
+						$node = $node->array();
+					});
+				}
+
+				$this->$edge = $node;
+			}
+		}
+	}
 
 	/**
 	 * Takes a string of edges to expand and returns an array
