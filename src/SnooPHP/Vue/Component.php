@@ -12,7 +12,7 @@ namespace SnooPHP\Vue;
  * a script used to register a global component or declare a local component - @see https://vuejs.org/v2/guide/components.html#Global-Registration
  * and a style block
  * 
- * SnooPHP parses the template content in the `template` property of the component, script and style tag are included as they are in the final view
+ * SnooPHP parses the template content in the `template` property of the component, script and style tag are included as is in the final view
  * 
  * Use `vueComponent()` global function to include a vue component
  * 
@@ -35,10 +35,10 @@ class Component
 	public static function parse($content)
 	{
 		// Parse vue template
-		if (preg_match("~<template>((?:.)+)</template>~s", $content, $template))
+		if (preg_match("~<template>(.+)</template>~s", $content, $template))
 		{
 			// Remove template code
-			$content = preg_replace("~{$template[0]}~", "", $content);
+			$content = preg_replace("~<template>(.+)</template>~", "", $content);
 			
 			// Minify template code
 			/* @todo can cause problems with <pre> blocks */
