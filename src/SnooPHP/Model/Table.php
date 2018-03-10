@@ -92,7 +92,7 @@ class Table
 	 * 
 	 * @return array
 	 */
-	public function computeDependencies()
+	public function generateDependencies()
 	{
 		foreach ($this->columns as $column)
 		{
@@ -241,7 +241,7 @@ class Table
 	 */
 	public function createQuery()
 	{
-		$query			= "create table ".$this->name."(\n\t";
+		$query			= "create table {$this->name}(\n\t";
 		$columns		= [];
 		$constraints	= [];
 		foreach ($this->columns as $column)
@@ -255,6 +255,60 @@ class Table
 			if ($column->property("unique")) $constraints[] = "constraint UK_".$this->name()."_".$name." unique key (".$name.")";
 			if ($column->property("primary")) $constraints[] = "constraint PK_".$this->name()."_".$name." primary key (".$name.")";
 			if ($foreign = $column->property("foreign")) $constraints[] = "constraint FK_".$this->name()."_".$name." foreign key (".$name.") references ".$foreign["table"]."(".$foreign["column"].")".($foreign["onDelete"] ? " on delete ".$foreign["onDelete"] : "").($foreign["onUpdate"] ? " on update ".$foreign["onUpdate"] : "");
+
+			// Composite keys
+			if ($column->property("uniqueComposite") !== null)
+			{
+				$uniqueChain[] = $column;
+				// Close chain
+				if ($column->property("uniqueComposite") === true)
+				{
+					$compositeKey = array_map(function($column) {
+	
+						return $column->name();
+					}, $uniqueChain);
+	
+					$constraints[] = "constraint UK_{$this->name}_".implode("_", $compositeKey)." unique key (".implode(", ", $compositeKey).")";
+					$uniqueChain = [];
+				}
+			}
+			if ($column->property("primaryComposite") !== null)
+			{
+				$primaryChain[] = $column;
+				// Close chain
+				if ($column->property("primaryComposite") === true)
+				{
+					$compositeKey = array_map(function($column) {
+	
+						return $column->name();
+					}, $primaryChain);
+	
+					$constraints[] = "constraint PK_{$this->name}_".implode("_", $compositeKey)." primary key (".implode(", ", $compositeKey).")";
+					$primaryChain = [];
+				}
+			}
+			if ($foreign = $column->property("foreignComposite") !== null)
+			{
+				$foreignChain[] = $column;
+				// Close chain
+				if ($foreign["closeChain"] === true)
+				{
+					$compositeKey = [];
+					$compositeRef = [];
+					foreach ($foreignChain as $column)
+					{
+						$compositeKey[] = $column->name();
+						$compositeRef[] = $column->property("foreignComposite")["column"];
+					}
+	
+					$onDelete = $foreign["onDelete"];
+					$onUpdate = $foreign["onUpdate"];
+					$refTable = $foreign["table"];
+	
+					$constraints[] = "constraint FK_{$this->name}_".implode("_", $compositeKey)." foreign key (".implode(", ", $compositeKey).") references $refTable(".implode(", ", $compositeRef).") on delete $onDelete on update $onUpdate";
+					$foreignChain = [];
+				}
+			}
 		}
 		
 		// Build query
@@ -438,6 +492,18 @@ class Column
 	}
 
 	/**
+	 * Make composite unique key
+	 * 
+	 * @param bool $closeChain close composite chain
+	 * 
+	 * @return Column
+	 */
+	public function uniqueComposite($closeChain = false)
+	{
+		return $this->set("uniqueComposite", $closeChain);
+	}
+
+	/**
 	 * Make primary key
 	 * 
 	 * @return Column
@@ -445,6 +511,18 @@ class Column
 	public function primary()
 	{
 		return $this->set("primary");
+	}
+
+	/**
+	 * Make composite primary key
+	 * 
+	 * @param bool $closeChain close composite chain
+	 * 
+	 * @return Column
+	 */
+	public function primaryComposite($closeChain = false)
+	{
+		return $this->set("primaryComposite", $closeChain);
 	}
 
 	/**
@@ -457,13 +535,35 @@ class Column
 	 * 
 	 * @return Column
 	 */
-	public function references($table, $column, $onDelete = null, $onUpdate = null)
+	public function references($table, $column, $onDelete = "no action", $onUpdate = "no action")
 	{
 		return $this->set("foreign", [
 			"table"		=> $table,
 			"column"	=> $column,
 			"onDelete"	=> $onDelete ? strtolower($onDelete) : null,
 			"onUpdate"	=> $onUpdate ? strtolower($onUpdate) : null
+		]);
+	}
+
+	/**
+	 * Make composite foreign key
+	 * 
+	 * @param string		$column		name of foreign column
+	 * @param bool			$closeChain close composite chain
+	 * @param string		$table		name of foreign table
+	 * @param string|null	$onDelete	on delete option
+	 * @param string|null	$onUpdate	on update option
+	 * 
+	 * @return Column
+	 */
+	public function referencesComposite($column, $closeChain = false, $table = "table", $onDelete = "no action", $onUpdate = "no action")
+	{
+		return $this->set("foreignComposite", [
+			"closeChain"	=> $closeChain,
+			"table"			=> $table,
+			"column"		=> $column,
+			"onDelete"		=> $onDelete,
+			"onUpdate"		=> $onUpdate
 		]);
 	}
 
