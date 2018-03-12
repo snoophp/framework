@@ -3,6 +3,7 @@
 namespace SnooPHP;
 
 use SnooPHP\Http\Request;
+use SnooPHP\Vue\Component;
 
 /**
  * Set of utility methods
@@ -46,21 +47,11 @@ class Utils
 	{
 		$request = $request ?: Request::current();
 		
-		$fullPath = path("views/components")."/$name.php";
-		if (file_exists($fullPath))
-		{
-			ob_start();
-			include $fullPath;
-			$content = ob_get_contents();
-			ob_end_clean();
+		$component = new Component($name, $args, $request);
+		if (!$component->valid()) return false;
+		echo $component->parse();
 
-			// Output parsed content
-			echo \SnooPHP\Vue\Component::parse($content);
-
-			return true;
-		}
-
-		return false;
+		return true;
 	}
 
 	/**
@@ -80,7 +71,7 @@ class Utils
 			$style		= "";
 			$script		= "";
 			
-			if (in_array("merge_blocks", env("view_optimization")))
+			if (env("merge_blocks"))
 			{			
 				/** @todo this only works if scripts doesn't contains other '</script>' tags */
 				if (preg_match_all("~(?:<style>((?:(?!</).)*)</style>|<script>((?:(?!</sc).)*)</script>)~s", $postBody, $matches))
