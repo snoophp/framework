@@ -64,25 +64,40 @@ class Utils
 	public static function optimizeView($content)
 	{
 		// Valid html only contains one body block
-		if ($pos = strpos($content, "</body>"))
+		$bodyStart	= strpos($content, "<body");
+		$bodyEnd	= strpos($content, "</body") + 7;
+		if ($bodyStart !== false && $bodyEnd !== false)
 		{
-			$preBody	= substr($content, 0, $pos);		
-			$postBody	= substr($content, $pos);
-			$style		= "";
-			$script		= "";
+			$preBody	= substr($content, 0, $bodyStart);	
+			$body		= substr($content, $bodyStart, $bodyEnd - $bodyStart);	
+			$postBody	= substr($content, $bodyEnd);
+			$styles		= "";
+			$scripts	= "";
 			
-			if (env("merge_blocks"))
-			{			
-				/** @todo this only works if scripts doesn't contains other '</script>' tags */
-				if (preg_match_all("~(?:<style>((?:(?!</).)*)</style>|<script>((?:(?!</sc).)*)</script>)~s", $postBody, $matches))
+			if (true)
+			{
+				// Match all style and script blocks
+				// Content is merged together and passed to the css preprocessor (if any)
+				if (preg_match_all("~(?:<style>\n?((?:(?!</).)+)</style>|<script>\n?((?:(?!</script>).)+)</script>)~s", $postBody, $matches))
 				{
-					foreach ($matches[1] as $styleContent) $style .= $styleContent;
-					foreach ($matches[2] as $scriptContent) $script .= $scriptContent;
+					foreach ($matches[1] as $styleContent)	$styles		.= $styleContent;
+					foreach ($matches[2] as $scriptContent)	$scripts	.= $scriptContent;
 				}
-				$postBody = preg_replace("~(?:<style>|<script>).*(?:</style>|</script>)~s", "", $postBody);
 
-				// Set merged style and script
-				$content = $preBody.preg_replace("~</body>~", "</body><style>".$style."</style><script>".$script."</script>", $postBody);
+				// Compile styles
+				$preProcessor = env("css_pp");
+				switch ($preProcessor)
+				{
+					case "lessc":
+						if (`which lessc`) $styles = `echo "$styles" | lessc - -x`;
+						else error_log("make sure that lessc is installed (`npm install -g less`)");
+						break;
+				}
+
+				$postBody = "<script>$scripts</script>\n<style>$styles</style>";
+
+				// Recompose
+				$content = $preBody.$body.$postBody;
 			}
 		}
 

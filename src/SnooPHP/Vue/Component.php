@@ -127,39 +127,19 @@ class Component
 	 */
 	protected function compileStyle()
 	{
-		if (!env("compile_less")) return;
-
-		// Check lessc installation
-		$less = `which lessc`;
-		if (empty($less))
-		{
-			error_log("warning: make sure 'lessc' is installed");
-			return;
-		}
-
 		$result = "";
 		if (preg_match_all("~<style\s*(scoped)?>([^<]*)</style>~s",
 			$this->content, $styles, PREG_SET_ORDER))
 		{
 			foreach ($styles as $style)
 			{
-				$scoped = strcmp($style[1], "scoped") === 0;
-				$rules = $scoped ? "#{$this->id}{".$style[2]."}" : $style[2];
-				$output = `echo "$rules" | lessc -`;
-
-				if (empty($output))
-				{
-					error_log("warning: empty or invalid less code");
-					$result .= $style[2];
-				}
-				else
-				{
-					$result .= $output;
-				}
+				$scoped	= strcmp($style[1], "scoped") === 0;
+				$rules	= $scoped ? "#{$this->id}{".$style[2]."}" : $style[2];
+				$result	.= $rules;
 			}
-		}
 
-		// Replace with unique style block
-		$this->content = preg_replace("~<style.*</style>~s", "<style>\n$result\n</style>", $this->content);
+			// Replace with unique style block
+			$this->content = preg_replace("~<style.*</style>~s", "<style>\n$result\n</style>", $this->content);
+		}
 	}
 }

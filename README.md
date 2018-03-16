@@ -17,6 +17,8 @@ SnooPHP is a small project, not meant to be used to develop complex applications
 - **Ready-to-use git webhook script**
 - Other stuff ...
 
+Check the [Wiki](https://github.com/snoophp/framework/wiki) for more informations
+
 ## Q&A
 
 **Is it fast? Is it faster than other frameworks?**
@@ -31,8 +33,8 @@ Right now only MySQL is supported (which is my DBMS of choice). It should not be
 
 SnooPHP and the SnooPHP framework are available on [Packagist](https://packagist.org) so you can simply use composer to install it:
 
-```terminal
-> composer require "snoophp\snoophp"
+```shell
+> composer create-project "snoophp\snoophp" <project-dir>
 ```
 
 > Note, this repository contains just the framework
