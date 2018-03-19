@@ -235,9 +235,11 @@ class Model
 	/**
 	 * Save object to database, updating or inserting a new row
 	 * 
+	 * @param bool|null $update if true update model, otherwise insert (null, decide based on id column)
+	 * 
 	 * @return Model
 	 */
-	public function save()
+	public function save($update = null)
 	{
 		// Global instance
 		global $db;
@@ -245,9 +247,9 @@ class Model
 		// Get columns
 		$columns = static::tableColumns();
 		$idColumn = static::$idColumn;
-		$bUpdate = isset($this->$idColumn);
+		$update = (isset($this->$idColumn) && $update === null) || $update;
 
-		if ($bUpdate)
+		if ($update)
 		{
 			// Build updates
 			$updates = "";
