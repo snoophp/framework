@@ -154,6 +154,7 @@ class Response
 	 */
 	public static function json($content)
 	{
+		if (is_a($content, "SnooPHP\Model\Collection")) $content = $content->array();
 		return new static(
 			to_json($content),
 			200, [

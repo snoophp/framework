@@ -225,7 +225,7 @@ class Model
 			
 			// Populate model
 			$refModel = new $refClass;
-			foreach ($row as $column => $val) $refModel->$column = $refModel->decodeValue($val);
+			foreach ($row as $column => $val) $refModel->$column = $refModel->decodeValue($val, $column);
 			return $refModel;
 		}
 

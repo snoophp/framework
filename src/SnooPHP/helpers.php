@@ -50,6 +50,28 @@ if (!function_exists("path"))
 	}
 }
 
+if (!function_exists("read_file"))
+{
+	/**
+	 * Return content from file
+	 * 
+	 * It is really just an alias for @see file_get_contents()
+	 * 
+	 * @param string $path path to file
+	 * 
+	 * @return string|bool false if fails
+	 */
+	function read_file($path)
+	{
+		// Calc real path
+		$path = ltrim($path);
+		if ($path[0] === '/')	$path = rtrim($path);
+		else					$path = path($path);
+
+		return file_get_contents($path);
+	}
+}
+
 if (!function_exists("to_json"))
 {
 	/**
@@ -120,5 +142,39 @@ if (!function_exists("unescape_unicode"))
 	function unescape_unicode($content)
 	{
 		return preg_replace("/\\\\\\\\u/", "\\\\u", $content);
+	}
+}
+
+if (!function_exists("write_file"))
+{
+	/**
+	 * Put content to file using put_content native php function
+	 * 
+	 * @param string	$path		path to file
+	 * @param mixed		$content	string, binary or object/array content (converted to json)
+	 * @param bool		$createDir	if directories don't exist create them
+	 * @param bool		$serialize	if true, objects and arrays will be serialized rather than converted to json
+	 * 
+	 * @return bool false if fails
+	 */
+	function write_file($path, $content, $createDir = true, $serialize = false)
+	{
+		// Calc real path
+		$path = ltrim($path);
+		if ($path[0] === '/')	$path = rtrim($path);
+		else					$path = path($path);
+
+		// Check if dir exists
+		// Create it otherwise
+		$dir = dirname($path);
+		if (!file_exists($dir) && (!$createDir || !mkdir($dir, 0755, true))) return false;
+
+		// Convert content
+		$content = is_string($content) ? $content : (
+			$serialize ? serialize($content) : to_json($content)
+		);
+
+		// Write file
+		return file_put_contents($path, $content) !== false;
 	}
 }

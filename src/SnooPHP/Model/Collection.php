@@ -162,6 +162,21 @@ class Collection
 	}
 
 	/**
+	 * Expands nodes within this collection
+	 * 
+	 * @param string|array	$edges	edges to expand
+	 * @param bool			$force	assumes all models are nodes
+	 * 
+	 * @return Collection return this collection
+	 */
+	public function expand($edges = [], $force = true)
+	{
+		if ($force)	foreach ($this->models as $i => $model) $this->models[$i]->expand($edges);
+		else		foreach ($this->models as $i => $model) if (is_a($model, "SnooPHP\Model\Node")) $this->models[$i]->expand($edges);
+		return $this;
+	}
+
+	/**
 	 * Append another collection
 	 * 
 	 * @param Collection $collection collection to append
