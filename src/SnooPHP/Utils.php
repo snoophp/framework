@@ -90,7 +90,11 @@ class Utils
 				{
 					case "lessc":
 						if (`which lessc`) $styles = `echo "$styles" | lessc - -x`;
-						else error_log("make sure that lessc is installed (`npm install -g less`)");
+						else error_log("make sure that lessc is installed (`npm i -g less`)");
+						break;
+					case "stylus":
+						if (`which stylus`) $styles = `echo "$styles" | stylus --compress`;
+						else error_log("make sure that stylus is installed (`npm i -g stylus`)");
 						break;
 				}
 
