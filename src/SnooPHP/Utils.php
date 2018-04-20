@@ -57,6 +57,8 @@ class Utils
 	/**
 	 * Merge together styles and scripts blocks after body
 	 * 
+	 * @ignore don't use this function
+	 * 
 	 * @param string $content a valid html document content
 	 * 
 	 * @return string
@@ -74,7 +76,8 @@ class Utils
 			$styles		= "";
 			$scripts	= "";
 			
-			if (true)
+			/** @todo not sure if it's a good idea */
+			if (false)
 			{
 				// Match all style and script blocks
 				// Content is merged together and passed to the css preprocessor (if any)
@@ -83,21 +86,6 @@ class Utils
 					foreach ($matches[1] as $styleContent)	$styles		.= $styleContent;
 					foreach ($matches[2] as $scriptContent)	$scripts	.= $scriptContent;
 				}
-
-				// Compile styles
-				$preProcessor = env("css_pp");
-				switch ($preProcessor)
-				{
-					case "lessc":
-						if (`which lessc`) $styles = `echo "$styles" | lessc - -x`;
-						else error_log("make sure that lessc is installed (`npm i -g less`)");
-						break;
-					case "stylus":
-						if (`which stylus`) $styles = `echo "$styles" | stylus --compress`;
-						else error_log("make sure that stylus is installed (`npm i -g stylus`)");
-						break;
-				}
-
 				$postBody = "<script>$scripts</script>\n<style>$styles</style>";
 
 				// Recompose
@@ -106,6 +94,48 @@ class Utils
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Compile style content using specified css preprocessor
+	 * 
+	 * @param string	$content	content to compile
+	 * @param string	$lang		css preprocessor (default to vanilla css, no process)
+	 * 
+	 * @return string compiled content
+	 */
+	public static function processStyle($content, $lang = "vanilla")
+	{
+		$compiled = $content;
+		switch ($lang) {
+			case "lessc":
+			case "less":
+				if (empty(`which lessc`))
+				{
+					error_log("lessc module not found (run `npm i -g lessc` to install)");
+					break;
+				}
+
+				$compiled = `echo "$content" | lessc - --compress`;
+				break;
+			
+			case "stylus":
+				if (empty(`which stylus`))
+				{
+					error_log("stylus module not found (run `npm i -g stylus` to install)");
+					break;
+				}
+
+				$compiled = `echo "$content" | stylus --compress`;
+				break;
+			
+			default:
+				/* Nothing to compile */
+				break;
+		}
+
+		// Return result
+		return $compiled;
 	}
 
 	/**

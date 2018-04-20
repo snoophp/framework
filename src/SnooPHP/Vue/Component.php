@@ -3,6 +3,7 @@
 namespace SnooPHP\Vue;
 
 use SnooPHP\Http\Request;
+use SnooPHP\Utils;
 
 /**
  * Methods to handle vue components
@@ -91,7 +92,7 @@ class Component
 	{
 		// Parse vue template
 		$this->generateTemplate();
-		$this->compileStyle();
+		$this->parseStyles();
 
 		return $this->content;
 	}
@@ -103,18 +104,11 @@ class Component
 	{
 		if (preg_match("~<template>(.+)</template>~s", $this->content, $template))
 		{
-			$template = $template[1];
-			if (preg_match("~^\s*<div(.*)id=.([^\"']+).~", $template, $matches))
-			{
-				// Extract id
-				$this->id = explode(" ", $matches[2])[0];
-			}
-			else
-			{
-				// Generate id for component
-				$this->id = "comp".static::$count;
-				$template = preg_replace("~^\s*<div~", "<div id=\"{$this->id}\"", $template, 1);
-			}
+			$template = trim($template[1], "\n");
+			
+			// Generate id for component
+			$this->id	= "snoophp-comp-".static::$count;
+			$template	= preg_replace("~(<[A-Za-z][A-Za-z0-9\-]+)([^>]*)(?=/?>)~", "$1 {$this->id}$2", $template);
 
 			// Remove template block and set component template
 			$this->content	= preg_replace("~<template>(.+)</template>~s", "", $this->content);
@@ -123,23 +117,99 @@ class Component
 	}
 
 	/**
-	 * Compile style blocks
+	 * Parse style blocks
 	 */
-	protected function compileStyle()
+	protected function parseStyles()
 	{
+		// Find style tags
 		$result = "";
-		if (preg_match_all("~<style\s*(scoped)?>([^<]*)</style>~s",
-			$this->content, $styles, PREG_SET_ORDER))
+		if (preg_match_all("~(<style[^>]*>)([^<]*)</style>~", $this->content, $styles, PREG_SET_ORDER)) foreach ($styles as $style)
 		{
-			foreach ($styles as $style)
+			// Get style properties
+			$content	= $style[2];
+			$tag		= $style[1];
+			$lang		= "vanilla";
+			$scoped		= false;
+			if (preg_match_all("~([a-z][-a-z0-9]*)(?:=([^\s]+))?~", $tag, $attributes, PREG_SET_ORDER)) foreach ($attributes as $att)
 			{
-				$scoped	= strcmp($style[1], "scoped") === 0;
-				$rules	= $scoped ? "#{$this->id}{".$style[2]."}" : $style[2];
-				$result	.= $rules;
+				if ($att[1] === "lang")
+				{
+					if (isset($att[2])) $lang = trim($att[2], '"');
+				}
+				else if ($att[1] === "scoped")
+				{
+					$scoped = true;
+				}
+				else if ($att[1] !== "style")
+				{
+					error_log("unknown attribute found on style tag: ".$att[0]);
+				}
 			}
 
-			// Replace with unique style block
-			$this->content = preg_replace("~<style.*</style>~s", "<style>\n$result\n</style>", $this->content);
+			// Compile style
+			$compiled = Utils::processStyle($content, $lang);
+
+			// Apply scope if necessary
+			/** @todo this could be very expensive, but I could not come up with something better */
+			if ($scoped)
+			{
+				// Find selectors
+				if (preg_match_all("~(?:(@[^;{}]+){((?:[^{}]+{[^}]*}\s*)*)}|([^;{}]+)({[^}]*})|([^;{}]+;))~", $compiled, $matches, PREG_SET_ORDER))
+				{
+					// Reset output
+					$compiled = "";
+
+					foreach ($matches as $match)
+					{
+						if (!empty($match[1]))
+						{
+							$rule	= trim($match[1]);
+							$ruled	= trim($match[2]);
+
+							$compiled .= $rule.'{';
+
+							// Rerun regex for rule content
+							if (preg_match_all("~([^;{}]+)({[^}]*})~", $ruled, $matches_, PREG_SET_ORDER))
+								foreach($matches_ as $match_)
+									if (!empty($match_[1]))
+									{
+										// Split selectors
+										$selectors	= explode(",", $match_[1]);
+										$content	= trim($match_[2]);
+										foreach($selectors as $i => $selector)
+											$selectors[$i] = preg_replace("~([\.#]?[a-zA-Z][-a-zA-Z0-9]*)((?:\[[^\]]+\]|\:\:?[a-z]+)*)$~", "$1[{$this->id}]$2", trim($selector));
+										
+										// Add to compiled
+										$compiled .= implode(",", $selectors).$content;
+									}
+							
+							$compiled .= '}';
+						}
+						else if (!empty($match[3]))
+						{
+							// Split selectors
+							$selectors	= explode(",", $match[3]);
+							$content	= trim($match[4]);
+							foreach($selectors as $i => $selector)
+								$selectors[$i] = preg_replace("~([\.#]?[a-zA-Z][-a-zA-Z0-9]*)((?:\[[^\]]+\]|\:\:?[a-z]+)*)$~", "$1[{$this->id}]$2", trim($selector));
+							
+							// Add to compiled
+							$compiled .= implode(",", $selectors).$content;
+						}
+						else
+						{
+							// Add to compiled
+							$compiled .= $match[5];
+						}
+					}
+				}
+			}
+
+			// Merge in single result
+			$result .= $compiled;
 		}
+
+		// Replace with unique style block
+		$this->content = preg_replace("~<style.*</style>~s", "<style>\n$result\n</style>", $this->content);
 	}
 }
