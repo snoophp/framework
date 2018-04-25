@@ -31,6 +31,11 @@ class Model
 	protected static $jsons = [];
 
 	/**
+	 * @var array $autos list of columns that have an auto value on update (i.e. 'modified_at' timestamp)
+	 */
+	protected static $autos = [];
+
+	/**
 	 * @var string $dbName name of the database @todo not implemented yet
 	 */
 	protected static $dbName = "master";
@@ -254,9 +259,8 @@ class Model
 			// Build updates
 			$updates = "";
 			foreach ($columns as $column)
-			{
-				if ($column !== $idColumn) $updates .= " ".$column." = :".$column.",";
-			}
+				if ($column !== $idColumn && !(in_array($column, static::$autos) && $this->$column === null))
+					$updates .= " ".$column." = :".$column.",";
 			$updates = substr($updates, 1, -1);
 
 			// Update query
@@ -265,7 +269,9 @@ class Model
 			SET ".$updates."
 			WHERE ".$idColumn." = :id
 			");
-			foreach ($columns as $column) if ($column !== $idColumn) $query->bindValue(":".$column, $this->encodeValue($column));
+			foreach ($columns as $column)
+				if ($column !== $idColumn && !(in_array($column, static::$autos) && $this->$column === null))
+					$query->bindValue(":".$column, $this->encodeValue($column));
 			$query->bindValue(":id", $this->$idColumn);
 
 			if ($query->execute())
