@@ -36,15 +36,16 @@ if (!function_exists("path"))
 	/**
 	 * Return absolute path for project directory
 	 * 
-	 * @param string $name directory name
+	 * @param string	$name	directory name
+	 * @param bool		$safe	return false if file/directory doesn't exist
 	 * 
 	 * @return string
 	 */
-	function path($name)
+	function path($name, $safe = false)
 	{
 		$rootDir = defined("ROOT_DIR") ? ROOT_DIR : $_SERVER["DOCUMENT_ROOT"];
 		$path = realpath($rootDir."/".$name);
-		return file_exists($path) ?
+		return file_exists($path) || !$safe ?
 		$path :
 		false;
 	}
