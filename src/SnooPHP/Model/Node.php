@@ -57,14 +57,14 @@ abstract class Node extends Model
 				}
 				else if (is_a($node, "SnooPHP\Model\Collection"))
 				{
-					$node->each(function(&$node) use($subedges) {
+					$node->each(function($subnode) use($subedges) {
 
-						if (is_a($node, "SnooPHP\Model\Node"))
+						if (is_a($subnode, "SnooPHP\Model\Node"))
 						{
-							$node->expand($subedges);
+							$subnode->expand($subedges);
 						}
-						$node = $node->array();
 					});
+					$node = $node->array();
 				}
 
 				$this->$edge = $node;
