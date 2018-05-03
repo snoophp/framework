@@ -13,7 +13,6 @@ SnooPHP is a small project, not meant to be used to develop complex applications
 - **Very simple routing** with the possibility to define multiple routers and keep your routes organized.
 - **cURL interface** to perform simple HTTP requests server-side, without the hassle of the `curl` PHP library
 - **Incredibly simple SQL database interface** inspired by Eloquent (only MySQL supported right now).
-- **Easy-to-use websocket interface**
 - **Ready-to-use git webhook script**
 - Other stuff ...
 
