@@ -107,6 +107,9 @@ class Utils
 	public static function processStyle($content, $lang = "vanilla")
 	{
 		$compiled = $content;
+
+		// Escape double quotes
+		$content	= preg_replace("/\"/", "\\\"", $content);
 		switch ($lang) {
 			case "lessc":
 			case "less":
