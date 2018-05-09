@@ -19,24 +19,44 @@ use SnooPHP\Utils;
  * 
  * Use `vueComponent()` global function to include a vue component
  * 
- * @author sneppy
+ * @author Sneppy
  */
 class Component
 {
-	/**
-	 * @var string $file filepath
-	 */
-	protected $file;
-	
 	/**
 	 * @var string $id component id
 	 */
 	protected $id;
 
 	/**
-	 * @var string $content processed content
+	 * @var string $file filepath
 	 */
-	protected $content = "";
+	protected $file;
+
+	/**
+	 * @var string $document unprocessed content
+	 */
+	protected $document;
+
+	/**
+	 * @var string $template parsed template
+	 */
+	protected $template;
+
+	/**
+	 * @var string $script parsed script
+	 */
+	protected $script;
+
+	/**
+	 * @var string $style parsed style
+	 */
+	protected $style;
+
+	/**
+	 * @var bool $valid true if component is valid
+	 */
+	protected $valid = true;
 	
 	/**
 	 * @var int count number of components parsed in current request
@@ -44,28 +64,37 @@ class Component
 	protected static $count = 0;
 
 	/**
+	 * @const SCOPE_ATTRIBUTE attribute name used to define component scope
+	 */
+	const SCOPE_ATTRIBUTE = "snoophp-comp-";
+
+	/**
 	 * Create a new vue component
 	 * 
-	 * @param string	$name	component full name
+	 * @param string	$file		component file path
 	 * @param array		$args		arguments to expose
 	 * @param Request	$request	request if differs from current request
 	 */
-	public function __construct($name, array $args = [], Request $request = null)
+	public function __construct($file, array $args = [], Request $request = null)
 	{
+		// Retrieve current request if none specified
 		$request = $request ?: Request::current();
 
-		$this->file = path("views/components")."/$name.php";
+		$this->id	= static::$count;
+		$this->file	= $file;
 		if (file_exists($this->file))
 		{
 			// Get component content
 			ob_start();
 			include $this->file;
-			$this->content = ob_get_contents();
+			$this->document = ob_get_contents();
 			ob_end_clean();
-		}
 
-		// Increment component count
-		static::$count++;
+			// Increment component count
+			static::$count++;
+		}
+		else
+			error_log("component {$this->file} does not exists");
 	}
 
 	/**
@@ -75,141 +104,158 @@ class Component
 	 */
 	public function valid()
 	{
-		return !empty($this->content);
+		return $this->valid;
 	}
 
 	/**
-	 * Parse content as vue component
+	 * Return component template
 	 * 
-	 * First search for <template> block
-	 * If found, minify content and place it in vue component tempalte property
-	 * Template property should be prefixed by a colon `:template,` in the vue component
-	 * Finally remove the <template> block and return content
+	 * @return string
+	 */
+	public function template()
+	{
+		return $this->template;
+	}
+
+	/**
+	 *  Return component script
 	 * 
-	 * @return string parsed content
+	 * @return string
+	 */
+	public function script()
+	{
+		return $this->script;
+	}
+
+	/**
+	 * Return component style
+	 * 
+	 * @return string
+	 */
+	public function style()
+	{
+		return $this->style;
+	}
+
+	/**
+	 * Parse template, script and style blocks
 	 */
 	public function parse()
 	{
-		// Parse vue template
-		$this->generateTemplate();
-		$this->parseStyles();
-
-		return $this->content;
+		// Parse vue template,script and style
+		$this->parseTemplate();
+		$this->parseScript();
+		$this->parseStyle();
 	}
 
 	/**
-	 * Parse template code
+	 * Parse template block
 	 */
-	protected function generateTemplate()
+	protected function parseTemplate()
 	{
-		if (preg_match("~<template>(.+)</template>~s", $this->content, $template))
+		if (!empty($this->document) && preg_match("~<template>(.+)</template>~s", $this->document, $matches))
 		{
-			$template = trim($template[1], "\n");
-			
-			// Generate id for component
-			$this->id	= "snoophp-comp-".static::$count;
-			$template	= preg_replace("~(<[A-Za-z][A-Za-z0-9\-]*)([^>]*)(?=/?>)~", "$1 {$this->id}$2", $template);
+			$content		= trim($matches[1]);
 
-			// Remove template block and set component template
-			$this->content	= preg_replace("~<template>(.+)</template>~s", "", $this->content);
-			$this->content	= str_replace(":template", "template: `$template`", $this->content);
+			// Add scope
+			$this->template	= preg_replace("~(<[_A-Za-z][_\-\.A-Za-z0-9]*)([^>]*/?>)~", "$1 ".static::SCOPE_ATTRIBUTE.$this->id."$2", $content);
 		}
+		else
+			$this->valid = false;
+	}
+
+	/**
+	 * Parse script block
+	 */
+	protected function parseScript()
+	{
+		if (!empty($this->document) && preg_match("~<script>(.+)</script>~s", $this->document, $matches))
+		{
+			$content = trim($matches[1]);
+
+			// Add template
+			$this->script = str_replace(":template", "template: `{$this->template}`", $content);
+		}
+		else
+			$this->valid = false;
 	}
 
 	/**
 	 * Parse style blocks
 	 */
-	protected function parseStyles()
+	protected function parseStyle()
 	{
+		$this->style = "";
+
 		// Find style tags
-		$result = "";
-		if (preg_match_all("~(<style[^>]*>)([^<]*)</style>~", $this->content, $styles, PREG_SET_ORDER)) foreach ($styles as $style)
-		{
-			// Get style properties
-			$content	= $style[2];
-			$tag		= $style[1];
-			$lang		= "vanilla";
-			$scoped		= false;
-			if (preg_match_all("~([a-z][-a-z0-9]*)(?:=([^\s]+))?~", $tag, $attributes, PREG_SET_ORDER)) foreach ($attributes as $att)
+		if (!empty($this->document) && preg_match_all("~(<style [^>]*>)(.*)</style>~s", $this->document, $matches, PREG_SET_ORDER))
+			// Multiple style blocks are allowed
+			foreach ($matches as $styleBlock)
 			{
-				if ($att[1] === "lang")
+				$styleTag		= $styleBlock[1];
+				$styleContent	= $styleBlock[2];
+				$props			= ["lang" => "vanilla", "scoped" => false];
+				
+				// Get style properties
+				if (!empty($styleTag) && preg_match_all("~([^\s\"\'\:>/=]+)(?:\s*=\s*(?:\"([^\"]+)\"|\'[^\']+\'|[^\s\"\'\`<>=]+))?~s", $styleTag, $attributes, PREG_SET_ORDER))
+					foreach ($attributes as $attr)
+						if ($attr[1] === "lang")
+							$props["lang"] = $attr[2] ?? $attr[3] ?? $attr[4] ?? "vanilla";
+						else if ($attr[1] === "scoped")
+							$props["scoped"] = !empty($attr[2]) ? (bool)$attr[2] : true;
+				
+				// Compile style
+				$compiled = Utils::compileStyle($styleContent, $props["lang"]);
+
+				// Scope style
+				if ($props["scoped"])
 				{
-					if (isset($att[2])) $lang = trim($att[2], '"');
+					$scoped = "";
+
+					// Break up content
+					if (preg_match_all("~(?:(?<at_statement>@[^;{]+;)|(?<at_rule>@[^;{]+){(?<at_content>(?:[^{]+{[^{}]+}|[^}])+)}|(?<selector>[\.\-\*\[#_a-zA-Z][^{]*){(?<content>[^{}]*)})~S", $compiled, $parts, PREG_SET_ORDER))
+						foreach ($parts as $part)
+							if (!empty($part["at_statement"]))
+								$scoped .= $part["at_statement"];
+							else if (!empty($part["selector"]))
+								$scoped .= $this->applyScope($part["selector"])."{".(empty($part["content"]) ? "" : $part["content"])."}";
+							else if (!empty($part["at_rule"]))
+							{
+								// process nested blocks
+								$nested = "";
+								if (preg_match_all("~(?<selector>[\.\-\*\[#_a-zA-Z][\s\.\-\*\[_+>=a-zA-Z0-9]*){(?<content>[^{}]*)}~", $part["at_content"], $nestedRules, PREG_SET_ORDER))
+									foreach ($nestedRules as $nestedRule)
+										$nested .= $this->applyScope($nestedRule["selector"])."{{$part["content"]}}";
+								else
+									// For example @keyframe content is not processed
+									$nested = $part["at_content"];
+								
+								$scoped .= "{$part["at_rule"]}{{$nested}}";
+							}
+					
+					$compiled = $scoped;
 				}
-				else if ($att[1] === "scoped")
-				{
-					$scoped = true;
-				}
-				else if ($att[1] !== "style")
-				{
-					error_log("unknown attribute found on style tag: ".$att[0]);
-				}
+
+				$this->style .= trim($compiled);
 			}
+	}
 
-			// Compile style
-			$compiled = Utils::processStyle($content, $lang);
-
-			// Apply scope if necessary
-			/** @todo this could be very expensive, but I could not come up with something better */
-			if ($scoped)
-			{
-				// Find selectors
-				if (preg_match_all("~(?:(@[^;{}]+){((?:[^{}]+{[^}]*}\s*)*)}|([^;{}]+)({[^}]*})|([^;{}]+;))~", $compiled, $matches, PREG_SET_ORDER))
-				{
-					// Reset output
-					$compiled = "";
-
-					foreach ($matches as $match)
-					{
-						if (!empty($match[1]))
-						{
-							$rule	= trim($match[1]);
-							$ruled	= trim($match[2]);
-
-							$compiled .= $rule.'{';
-
-							// Rerun regex for rule content
-							if (preg_match_all("~([^;{}]+)({[^}]*})~", $ruled, $matches_, PREG_SET_ORDER))
-								foreach($matches_ as $match_)
-									if (!empty($match_[1]))
-									{
-										// Split selectors
-										$selectors	= explode(",", $match_[1]);
-										$content	= trim($match_[2]);
-										foreach($selectors as $i => $selector)
-											$selectors[$i] = preg_replace("~([\.#]?[a-zA-Z][-a-zA-Z0-9]*)((?:\[[^\]]+\]|\:\:?[a-z]+)*)$~", "$1[{$this->id}]$2", trim($selector));
-										
-										// Add to compiled
-										$compiled .= implode(",", $selectors).$content;
-									}
-							
-							$compiled .= '}';
-						}
-						else if (!empty($match[3]))
-						{
-							// Split selectors
-							$selectors	= explode(",", $match[3]);
-							$content	= trim($match[4]);
-							foreach($selectors as $i => $selector)
-								$selectors[$i] = preg_replace("~([\.#]?[a-zA-Z][-a-zA-Z0-9]*)((?:\[[^\]]+\]|\:\:?[a-z]+)*)$~", "$1[{$this->id}]$2", trim($selector));
-							
-							// Add to compiled
-							$compiled .= implode(",", $selectors).$content;
-						}
-						else
-						{
-							// Add to compiled
-							$compiled .= $match[5];
-						}
-					}
-				}
-			}
-
-			// Merge in single result
-			$result .= $compiled;
-		}
-
-		// Replace with unique style block
-		$this->content = preg_replace("~<style.*</style>~s", "<style>\n$result\n</style>", $this->content);
+	/**
+	 * Apply scope to selector
+	 * 
+	 * @param string $selector selector to scope
+	 * 
+	 * @return string
+	 */
+	protected function applyScope($selector)
+	{
+		$scoped	= "";
+		$parts	= preg_split("/([, >+~])/", $selector, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+		foreach ($parts as $part)
+			if (preg_match("/[, >+~]/", $part))
+				$scoped .= $part;
+			else
+				$scoped .= preg_replace("/([^:]+)((?:::?[^:]+)*)/", "$1[".static::SCOPE_ATTRIBUTE.$this->id."]$2", trim($part));
+		return $scoped;
 	}
 }

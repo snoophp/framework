@@ -31,23 +31,57 @@ if (!function_exists("from_json"))
 	}
 }
 
+if (!function_exists("mime_type"))
+{
+	/**
+	 * Alias for deprecated mime_content_type
+	 * 
+	 * uses Fileinfo
+	 * 
+	 * @param string $filename file to test
+	 * 
+	 * @return string mime type
+	 */
+	function mime_type($filename)
+	{
+		$fileInfo	= new finfo();
+		$type		= $fileInfo ? $fileInfo->file($filename, FILEINFO_MIME_TYPE) : false;
+		error_log($type);
+		// If plain/text, try to use extension
+		if ($type === "text/plain")
+		{
+			$ext = pathinfo($filename, PATHINFO_EXTENSION);
+			switch ($ext)
+			{
+				case "css":
+					return "text/css";
+				case "js":
+					return "text/javascript";	
+				default:
+					return "text/plain";
+			}
+		}
+
+		return $type;
+	}
+}
+
 if (!function_exists("path"))
 {
 	/**
 	 * Return absolute path for project directory
 	 * 
-	 * @param string	$name	directory name
+	 * @param string	$path	relative path
 	 * @param bool		$safe	return false if file/directory doesn't exist
 	 * 
 	 * @return string
 	 */
-	function path($name, $safe = false)
+	function path($path, $safe = false)
 	{
 		$rootDir = defined("ROOT_DIR") ? ROOT_DIR : $_SERVER["DOCUMENT_ROOT"];
-		$path = realpath($rootDir."/".$name);
-		return file_exists($path) || !$safe ?
-		$path :
-		false;
+		return $safe ?
+		realpath($rootDir."/".$path) :
+		$rootDir."/".$path;
 	}
 }
 

@@ -37,21 +37,25 @@ class Utils
 	/**
 	 * Include a vue component
 	 * 
-	 * @param string	$name		view name
+	 * @param string	$file		component file path
 	 * @param array		$args		arguments to expose
 	 * @param Request	$request	request if differs from current request
 	 * 
 	 * @return bool
 	 */
-	public static function vueComponent($name, array $args, Request $request = null)
+	public static function vueComponent($file, array $args, Request $request = null)
 	{
-		$request = $request ?: Request::current();
-		
-		$component = new Component($name, $args, $request);
-		if (!$component->valid()) return false;
-		echo $component->parse();
+		$request	= $request ?: Request::current();
+		$file		= substr($file, 0, 2) === "@/" ? path("views/components/".substr($file, 2).".vue.php") : $file;
+		$component	= new Component($file, $args, $request);
+		if ($component->valid())
+		{
+			// Register component
+			$GLOBALS["vue"]->register($component);
+			return true;
+		}
 
-		return true;
+		return false;
 	}
 
 	/**
@@ -104,11 +108,9 @@ class Utils
 	 * 
 	 * @return string compiled content
 	 */
-	public static function processStyle($content, $lang = "vanilla")
+	public static function compileStyle($content, $lang = "vanilla")
 	{
-		$compiled = $content;
-
-		// Escape double quotes
+		$compiled	= $content;
 		$content	= preg_replace("/\"/", "\\\"", $content);
 		switch ($lang) {
 			case "lessc":
@@ -139,6 +141,21 @@ class Utils
 
 		// Return result
 		return $compiled;
+	}
+
+	/**
+	 * Minify javascript using uglify-js if available
+	 * 
+	 * @param string $content content to minify
+	 */
+	public static function minifyJs($content)
+	{
+		if (!empty(`which uglifyjs`))
+		{
+			return `echo "$content" | uglifyjs --compress --mangle --mangle-props`;
+		}
+
+		return $content;
 	}
 
 	/**
