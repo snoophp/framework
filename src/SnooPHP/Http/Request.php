@@ -2,6 +2,12 @@
 
 namespace SnooPHP\Http;
 
+use SnooPHP\Http\Curl\Curl;
+use SnooPHP\Http\Curl\Get;
+use SnooPHP\Http\Curl\Post;
+use SnooPHP\Http\Curl\Put;
+use SnooPHP\Http\Curl\Delete;
+
 /**
  * Http request object
  * 
@@ -173,6 +179,31 @@ class Request
 	}
 
 	/**
+	 * Forward this request to another host
+	 * 
+	 * @param string	$host		target host
+	 * @param array		$headers	optional additional headers
+	 * 
+	 * @return Curl
+	 */
+	public function forward($host, array $headers = [])
+	{
+		// Merge additional headers
+		$headers = array_merge($this->headers, $headers);
+
+		if ($this->method === "GET")
+			$curl	= new Get($host.$this->url, $headers);
+		else if ($this->method === "POST")
+			$curl	= new Post($host.$this->url, $this->inputs, $headers);
+		else if ($this->method === "PUT")
+			$curl	= new Put($host.$this->url, $this->inputs, $headers);
+		else if ($this->method === "DELETE")
+			$curl	= new Delete($host.$this->url, $headers);
+		
+		return $curl;
+	}
+
+	/**
 	 * Return current request
 	 * 
 	 * @return Request
@@ -213,5 +244,15 @@ class Request
 			$inputs,
 			$files
 		);
+	}
+
+	/**
+	 * A quick test request
+	 * 
+	 * @return Request
+	 */
+	public static function test()
+	{
+		return new static("/test", "GET", date());
 	}
 }
