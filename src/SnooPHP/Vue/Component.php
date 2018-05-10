@@ -188,7 +188,7 @@ class Component
 		$this->style = "";
 
 		// Find style tags
-		if (!empty($this->document) && preg_match_all("~(<style [^>]*>)(.*)</style>~s", $this->document, $matches, PREG_SET_ORDER))
+		if (!empty($this->document) && preg_match_all("~(<style[^>]*>)([^<]*)</style>~s", $this->document, $matches, PREG_SET_ORDER))
 			// Multiple style blocks are allowed
 			foreach ($matches as $styleBlock)
 			{
@@ -213,7 +213,7 @@ class Component
 					$scoped = "";
 
 					// Break up content
-					if (preg_match_all("~(?:(?<at_statement>@[^;{]+;)|(?<at_rule>@[^;{]+){(?<at_content>(?:[^{]+{[^{}]+}|[^}])+)}|(?<selector>[\.\-\*\[#_a-zA-Z][^{]*){(?<content>[^{}]*)})~S", $compiled, $parts, PREG_SET_ORDER))
+					if (preg_match_all("~(?:(?<at_statement>@[^;{]+;)|(?<at_rule>@[^;{]+){(?<at_content>(?:[^{}]+{[^{}]+}|[^}])+)}|(?<selector>[\.\-\*\[#_a-zA-Z][^{]*){(?<content>[^{}]*)})~S", $compiled, $parts, PREG_SET_ORDER))
 						foreach ($parts as $part)
 							if (!empty($part["at_statement"]))
 								$scoped .= $part["at_statement"];
@@ -223,9 +223,12 @@ class Component
 							{
 								// process nested blocks
 								$nested = "";
-								if (preg_match_all("~(?<selector>[\.\-\*\[#_a-zA-Z][\s\.\-\*\[_+>=a-zA-Z0-9]*){(?<content>[^{}]*)}~", $part["at_content"], $nestedRules, PREG_SET_ORDER))
+								if ($count = preg_match_all("~(?<selector>[\.\-\*\[#_a-zA-Z][\s\.\-\*\[_+>=a-zA-Z0-9]*){(?<content>[^{}]*)}~", $part["at_content"], $nestedRules, PREG_SET_ORDER))
+								{
 									foreach ($nestedRules as $nestedRule)
-										$nested .= $this->applyScope($nestedRule["selector"])."{{$part["content"]}}";
+										if (!empty($nestedRule["content"]))
+											$nested .= $this->applyScope($nestedRule["selector"])."{{$nestedRule["content"]}}";
+								}
 								else
 									// For example @keyframe content is not processed
 									$nested = $part["at_content"];

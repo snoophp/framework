@@ -65,11 +65,9 @@ class Vue extends Component
 	/**
 	 * Get full document
 	 * 
-	 * @param bool $inline if true, style and scripts are appended to the document instead of being saved in a temporary file
-	 * 
 	 * @return string
 	 */
-	public function document($inline = false)
+	public function document()
 	{
 		// Remove style and script blocks
 		$document	= $this->document;
@@ -81,50 +79,44 @@ class Vue extends Component
 		$scriptFile	= path("resources/tmp/$name.js");
 		$styleFile	= path("resources/tmp/$name.css");
 
-		// If files exist, use them (if development force rebuild instead)
-		if (file_exists($scriptFile) && file_exists($styleFile) && env("env", "development") === "production")
-			// Link externally
-			return str_replace('</body>', '<script type="text/javascript" src="/tmp/'.$name.'.js"></script>
-			<link rel="stylesheet" type="text/css" href="/tmp/'.$name.'.css"/></body>', $document);
-
-		// Parse vue document
-		$this->parse();
-		if (!$this->valid())
+		// We're not caching scripts, otherwise we would lose php dynamic content
+		$script = "";
+		foreach($this->components as $comp)
 		{
-			error_log("($this->file} is not a valid Vue document");
-			return "";
+			$comp->parseTemplate();
+			$comp->parseScript();
+			if ($comp->valid()) $script .= $comp->script();
 		}
+		$this->parseScript();
+		$script .= $this->script();
 
-		$script	= $this->script;
-		$style	= $this->style;
+		// Minify javascript in production mode
+		if (env("env", "development") === "production") $script = Utils::minifyJs($script);
 
-		// Process components
-		foreach ($this->components as $comp)
-		{
-			$comp->parse();
-			if ($comp->valid())
+		// Write script file
+		write_file($scriptFile, $script);
+
+		// If style files does not exists or it's development mode, rebuild them
+		if (!file_exists($styleFile) || env("env", "development") === "development")
+		{	
+			// Process components style
+			$style = "";
+			foreach ($this->components as $comp)
 			{
-				$script	.= $comp->script();
+				$comp->parseStyle();
 				$style	.= $comp->style();
 			}
-		}
-
-		// Minify javascript and css (note that some tools like stylus or scss may have built-in compression)
-		$script = Utils::minifyJs($script);
-		//$style	= Utils::minifyCss($style);
-
-		// I specified, write style and script inline
-		if ($inline)
-			return str_replace("</body>", "<script>$script</script><style>$style</style></body>", $document);
-		else
-		{
-			// Write external files
-			write_file($scriptFile, $script);
+			$this->parseStyle();
+			$style .= $this->style();
+	
+			// I specified, write style and script inline
 			write_file($styleFile, $style);
-
-			// Link externally
-			return str_replace('</body>', '<script type="text/javascript" src="/tmp/'.$name.'.js"></script>
-			<link rel="stylesheet" type="text/css" href="/tmp/'.$name.'.css"/></body>', $document);
 		}
+
+	
+		// Link externally
+		return str_replace('</head>',
+		'<script type="text/javascript" src="/tmp/'.$name.'.js" defer></script>
+		<link rel="stylesheet" type="text/css" href="/tmp/'.$name.'.css" media="none" onload="media = \'all\'"/>', $document);
 	}
 }

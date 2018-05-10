@@ -160,7 +160,7 @@ class Response
 		// Get request
 		$request = $request ?: Request::current();
 		
-		$vue = new Vue(path("views/$file.php"));
+		$vue = new Vue(path("views/$file.php"), $args, $request);
 		return new static($vue->document());
 	}
 
