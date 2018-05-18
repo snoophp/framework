@@ -75,7 +75,7 @@ class Vue extends Component
 		$document	= preg_replace("~<script>.+</script>~s", "", $document);
 
 		// Get name and file paths
-		$name		= basename($this->file, ".php");
+		$name		= str_replace("/", ".", path_relative($this->file, path("views/")));
 		$scriptFile	= path("resources/tmp/$name.js");
 		$styleFile	= path("resources/tmp/$name.css");
 

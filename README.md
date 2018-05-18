@@ -2,6 +2,11 @@
 
 # SnooPHP
 
+![Packagist](https://img.shields.io/packagist/v/snoophp/framework.svg?style=for-the-badge)
+![Packagist](https://img.shields.io/packagist/l/snoophp/framework.svg?style=for-the-badge)
+![GitHub issues](https://img.shields.io/github/issues-raw/snoophp/framework.svg?style=for-the-badge)
+
+
 SnooPHP is a light PHP framework inspired by Laravel.
 
 ## Who is it for

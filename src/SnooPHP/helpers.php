@@ -74,14 +74,34 @@ if (!function_exists("path"))
 	 * @param string	$path	relative path
 	 * @param bool		$safe	return false if file/directory doesn't exist
 	 * 
-	 * @return string
+	 * @return string|bool
 	 */
-	function path($path, $safe = false)
+	function path($path = "", $safe = false)
 	{
 		$rootDir = defined("ROOT_DIR") ? ROOT_DIR : $_SERVER["DOCUMENT_ROOT"];
 		return $safe ?
 		realpath($rootDir."/".$path) :
 		$rootDir."/".$path;
+	}
+}
+
+if (!function_exists("path_relative"))
+{
+	/**
+	 * Return relative path (relative to project root folder by default)
+	 * 
+	 * @param string		$path	absolute path
+	 * @param string|null	$root	the root folder by default
+	 * 
+	 * @return string|bool
+	 */
+	function path_relative($path, $root = null)
+	{
+		$root = $root ?: path();
+		if (preg_match("@^$root@", $path))
+			return substr($path, strlen($root));
+		else
+			return false;
 	}
 }
 
