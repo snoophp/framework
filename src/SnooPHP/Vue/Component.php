@@ -261,4 +261,28 @@ class Component
 				$scoped .= preg_replace("/([^:]+)((?:::?[^:]+)*)/", "$1[".static::SCOPE_ATTRIBUTE.$this->id."]$2", trim($part));
 		return $scoped;
 	}
+
+	/**
+	 * Include a vue component
+	 * 
+	 * @param string	$file		component file path
+	 * @param array		$args		arguments to expose
+	 * @param Request	$request	request if differs from current request
+	 * 
+	 * @return bool
+	 */
+	public static function create($file, array $args, Request $request = null)
+	{
+		$request	= $request ?: Request::current();
+		$file		= substr($file, 0, 2) === "@/" ? path("views/components/".substr($file, 2).".vue.php") : $file;
+		$component	= new Component($file, $args, $request);
+		if ($component->valid())
+		{
+			// Register component
+			$GLOBALS["vue"]->register($component);
+			return true;
+		}
+
+		return false;
+	}
 }

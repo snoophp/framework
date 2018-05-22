@@ -1,20 +1,5 @@
 <?php
 
-if (!function_exists("escape_unicode"))
-{
-	/**
-	 * Escape unicode codes in string
-	 * 
-	 * @param string	$content	string to escape
-	 * 
-	 * @return string
-	 */
-	function escape_unicode($content)
-	{
-		return preg_replace("/\\\\u/", "\\\\\\\\u", $content);
-	}
-}
-
 if (!function_exists("from_json"))
 {
 	/**
@@ -169,34 +154,6 @@ if (!function_exists("view"))
 	function view($name, array $args = [], SnooPHP\Http\Request $request = null)
 	{
 		SnooPHP\Utils::view($name, $args, $request);
-	}
-}
-
-if (!function_exists("vueComponent"))
-{
-	/**
-	 * Include a vue component
-	 * 
-	 * @see SnooPHP\Utils::vueComponent()
-	 */
-	function vueComponent($name, array $args = [], SnooPHP\Http\Request $request = null)
-	{
-		SnooPHP\Utils::vueComponent($name, $args, $request);
-	}
-}
-
-if (!function_exists("unescape_unicode"))
-{
-	/**
-	 * Unescape unicode codes in string
-	 * 
-	 * @param string $content string to unescape
-	 * 
-	 * @return string
-	 */
-	function unescape_unicode($content)
-	{
-		return preg_replace("/\\\\\\\\u/", "\\\\u", $content);
 	}
 }
 
