@@ -1,6 +1,6 @@
 <?php
 
-namespace SnooPHP\Http\Curl;
+namespace SnooPHP\Curl;
 
 /**
  * GET request wrapper

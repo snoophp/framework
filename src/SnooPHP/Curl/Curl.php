@@ -1,6 +1,6 @@
 <?php
 
-namespace SnooPHP\Http\Curl;
+namespace SnooPHP\Curl;
 
 /**
  * Provides a friendly interface to perform HTTP requests using cURL library

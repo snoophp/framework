@@ -1,6 +1,6 @@
 <?php
 
-namespace SnooPHP\Http\Curl;
+namespace SnooPHP\Curl;
 
 /**
  * DELETE request wrapper
