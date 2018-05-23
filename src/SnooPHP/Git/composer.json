@@ -1,0 +1,26 @@
+{
+    "name": "snoophp/git",
+	"description": "SnooPHP git module",
+    "type": "library",
+	"license": "MIT",
+	"support": {
+		"issues": "https://github.com/snoophp/framework/issues",
+        "source": "https://github.com/snoophp/framework"
+	},
+    "authors": [
+        {
+            "name": "Sneppy",
+            "email": "andrea.mecchia@mail.polimi.it"
+        }
+    ],
+    "require": {
+		"php": ">7.0",
+		"snoophp-http": "*"
+	},
+	"autoload": {
+        "psr-4": {
+            "SnooPHP\\Git\\": ""
+        }
+    },
+	"minimum-stability": "dev"
+}

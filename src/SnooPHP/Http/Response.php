@@ -3,7 +3,6 @@
 namespace SnooPHP\Http;
 
 use SnooPHP\Utils;
-use SnooPHP\Vue\Vue;
 
 /**
  * Response to send to the client
@@ -144,24 +143,6 @@ class Response
 		$content = Utils::optimizeView($content);
 
 		return new static($content);
-	}
-
-	/**
-	 * Return a vue page
-	 * 
-	 * @param string	$file		vue file
-	 * @param array		$args		list of arguments available to the view
-	 * @param Request	$request	specify if differs from current request
-	 * 
-	 * @return Response
-	 */
-	public static function vue($file, array $args = [], Request $request = null)
-	{
-		// Get request
-		$request = $request ?: Request::current();
-		
-		$vue = new Vue(path("views/$file.php"), $args, $request);
-		return new static($vue->document());
 	}
 
 	/**

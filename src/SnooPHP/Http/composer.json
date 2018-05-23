@@ -1,0 +1,27 @@
+{
+    "name": "snoophp/http",
+	"description": "SnooPHP html core module",
+    "type": "library",
+	"license": "MIT",
+	"support": {
+		"issues": "https://github.com/snoophp/framework/issues",
+        "source": "https://github.com/snoophp/framework"
+	},
+    "authors": [
+        {
+            "name": "Sneppy",
+            "email": "andrea.mecchia@mail.polimi.it"
+        }
+    ],
+    "require": {
+		"php": ">7.0",
+		"snoophp-curl": "*",
+		"snooophp-utils": "*"
+	},
+	"autoload": {
+        "psr-4": {
+            "SnooPHP\\Http\\": ""
+        }
+    },
+	"minimum-stability": "dev"
+}

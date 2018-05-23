@@ -1,0 +1,25 @@
+{
+    "name": "snoophp/model",
+	"description": "SnooPHP database core module",
+    "type": "library",
+	"license": "MIT",
+	"support": {
+		"issues": "https://github.com/snoophp/framework/issues",
+        "source": "https://github.com/snoophp/framework"
+	},
+    "authors": [
+        {
+            "name": "Sneppy",
+            "email": "andrea.mecchia@mail.polimi.it"
+        }
+    ],
+    "require": {
+		"php": ">7.0"
+	},
+	"autoload": {
+        "psr-4": {
+            "SnooPHP\\Model\\": ""
+        }
+    },
+	"minimum-stability": "dev"
+}

@@ -8,7 +8,6 @@
 	],
     "type": "library",
 	"license": "MIT",
-	"minimum-stability": "dev",
 	"support": {
 		"issues": "https://github.com/snoophp/framework/issues",
         "source": "https://github.com/snoophp/framework"
@@ -22,12 +21,20 @@
     "require": {
 		"php": ">7.0"
 	},
+	"replace": {
+		"snoophp/curl": "self.version",
+		"snoophp/git": "self.version",
+		"snoophp/http": "self.version",
+		"snoophp/model": "self.version",
+		"snoophp/utils": "self.version"
+	},
 	"autoload": {
 		"files": [
-			"src/SnooPHP/helpers.php"
+			"src/SnooPHP/Utils/helpers.php"
 		],
         "psr-4": {
             "SnooPHP\\": "src/SnooPHP/"
         }
-    }
+    },
+	"minimum-stability": "dev"
 }

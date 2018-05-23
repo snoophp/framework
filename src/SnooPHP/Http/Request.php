@@ -2,11 +2,10 @@
 
 namespace SnooPHP\Http;
 
-use SnooPHP\Http\Curl\Curl;
-use SnooPHP\Http\Curl\Get;
-use SnooPHP\Http\Curl\Post;
-use SnooPHP\Http\Curl\Put;
-use SnooPHP\Http\Curl\Delete;
+use SnooPHP\Curl\Get;
+use SnooPHP\Curl\Post;
+use SnooPHP\Curl\Put;
+use SnooPHP\Curl\Delete;
 
 /**
  * Http request object
