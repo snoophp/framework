@@ -1,6 +1,6 @@
 {
-    "name": "snoophp/http",
-	"description": "SnooPHP html core module",
+    "name": "snoophp/utils",
+	"description": "SnooPHP utility functions",
     "type": "library",
 	"license": "MIT",
 	"support": {
@@ -14,16 +14,11 @@
         }
     ],
     "require": {
-		"php": ">7.0",
-		"snoophp-curl": "*",
-		"snooophp-utils": "*"
+		"php": ">7.0"
 	},
 	"autoload": {
-		"files": [
-			"helpers.php"
-		],
         "psr-4": {
-            "SnooPHP\\Http\\": ""
+            "SnooPHP\\Utils\\": ""
         }
     },
 	"minimum-stability": "dev"
