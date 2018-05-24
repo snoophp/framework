@@ -391,6 +391,17 @@ class Model
 	}
 
 	/**
+	 * Reset auto increment value
+	 * 
+	 * @return bool
+	 */
+	public static function resetAutoIncrement()
+	{
+		$tableName = static::tableName();
+		return Db::query("alter table $tableName AUTO_INCREMENT = 1") !== false;
+	}
+
+	/**
 	 * Return a json representation of the model
 	 * 
 	 * @return string
