@@ -415,15 +415,15 @@ class Table
 			
 			if ($new)
 			{
-				echo " # creating column {$newColumn->name()}\n";
+				echo "    ➤ creating column \e[1;37m{$newColumn->name()}\e[0m\n";
 
 				// New column query
-				$query	= "alter table {$this->name()} ".implode(",", array_merge(["add column ".$newColumn->declaration()], $newColumn->constraintsDeclarations()));
+				$query	= "alter table {$this->name()} ".implode(",", array_merge(["add column ".$newColumn->declaration()], $newColumn->constraintsDeclarations($this)));
 				$status	&= Db::query($query, [], $schema) !== false;
 			}
 			else if ($changed)
 			{
-				echo " # changing column {$newColumn->name()}\n";
+				echo "    ➤ changing column \e[1;37m{$newColumn->name()}\e[0m\n";
 
 				// Drop old constraints
 				$constraints = [];
@@ -436,7 +436,7 @@ class Table
 				$status &= Db::query("alter table {$this->name()} ".implode(",", $constraints), [], $schema) !== false;
 
 				// Generate column query
-				$query	= "alter table {$this->name()} change {$newColumn->name()} ".implode(",", array_merge([$newColumn->declaration()], $newColumn->constraintsDeclarations()));
+				$query	= "alter table {$this->name()} change {$newColumn->name()} ".implode(",", array_merge([$newColumn->declaration()], $newColumn->constraintsDeclarations($this)));
 				$status &= Db::query($query, [], $schema) !== false;
 			}
 
@@ -498,7 +498,7 @@ class Table
 		}
 
 		// Dropped columns
-		foreach ($oldColumn as $oldColumn)
+		foreach ($oldColumns as $oldColumn)
 		{
 			$dropped = true;
 			foreach ($newColumns as $newColumn)
@@ -511,7 +511,7 @@ class Table
 			
 			if ($dropped)
 			{
-				echo " # dropping column {$oldColumn->name()}\n";
+				echo "    ➤ dropping column \e[1;37m{$oldColumn->name()}\e[0m\n";
 
 				// Drop constraints
 				$constraints = [];
@@ -796,17 +796,20 @@ class Column
 	/**
 	 * Return constraints declarations
 	 * 
+	 * @param Table	$table	table of the column
+	 * 
 	 * @return array
 	 */
-	public function constraintsDeclarations()
+	public function constraintsDeclarations(Table $table)
 	{
-		$constraints = [];
-		if ($newColumn->property("unique"))		// UNIQUE
-			$constraints[] = "add constraint UK_{$tableName}_{$name} unique key ($name)";
-		if ($newColumn->property("primary"))	// PRIMARY
-			$constraints[] = "add constraint PK_{$tableName}_{$name} primary key ($name)";
-		if ($newColumn->property("foreign"))	// FOREIGN
-			$constraints[] = "add constraint FK_{$tableName}_{$name} foreign key ($name) references {$foreign["table"]}({$foreign["column"]}) on delete {$foreign["onDelete"]} on update {$foreign["onUpdate"]}";
+		$name			= $this->name;
+		$constraints	= [];
+		if ($this->property("unique"))		// UNIQUE
+			$constraints[] = "add constraint UK_{$table->name()}_{$name} unique key ($name)";
+		if ($this->property("primary"))	// PRIMARY
+			$constraints[] = "add constraint PK_{$table->name()}_{$name} primary key ($name)";
+		if ($foreign = $this->property("foreign"))	// FOREIGN
+			$constraints[] = "add constraint FK_{$table->name()}_{$name} foreign key ($name) references {$foreign["table"]}({$foreign["column"]}) on delete {$foreign["onDelete"]} on update {$foreign["onUpdate"]}";
 		
 		return $constraints;
 	}
