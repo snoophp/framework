@@ -85,7 +85,7 @@ int S(char* input)
 	_log("called S\n");
 	if (E(input) == VALID)
 	{
-		if (curr(input) == '|')
+		if (curr(input) == '|' || curr(input) == ',')
 		{
 			printf(",");
 			next();
@@ -137,11 +137,11 @@ int W(char* input)
 {
 	_log("called W\n");
 
-	if ((curr(input) >= 'a' && curr(input) <= 'z') || curr(input) == '_')
+	if ((curr(input) >= 'A' && curr(input) <= 'Z') || (curr(input) >= 'a' && curr(input) <= 'z') || curr(input) == '_')
 	{
 		printf("%c", curr(input));
 		next();
-		while((curr(input) >= 'a' && curr(input) <= 'z') || curr(input) == '_' || (curr(input) >= '1' && curr(input) <= '9'))
+		while((curr(input) >= 'A' && curr(input) <= 'Z') || (curr(input) >= 'a' && curr(input) <= 'z') || curr(input) == '_' || (curr(input) >= '0' && curr(input) <= '9'))
 		{
 			printf("%c", curr(input));
 			next();
