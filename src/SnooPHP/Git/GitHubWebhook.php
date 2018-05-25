@@ -22,6 +22,14 @@ class GitHubWebhook extends Webhook
 	public static function handle(Request $request)
 	{
 		global $webhookConfig;
+		if (!$webhookConfig)
+		{
+			error_log("error: missing webhook config!");
+			Response::abort(500, [
+				"status"		=> "ERROR",
+				"description"	=> "webhook misconfiguration"
+			]);
+		}
 
 		$payload = from_json($request->input("payload", "null"));
 		if (!$payload) Response::abort(400, [
@@ -30,11 +38,12 @@ class GitHubWebhook extends Webhook
 		]);
 
 		// Allow only from known addresses
-		$allowed = false; $ip = $request->header("Remote Address") ?: ($request->header("X-Client-Ip") ?: ($request->header("X-Forwarded-For") ?: $webhookConfig["strong_ip_validation"]));
-		if ($ip !== false)
+		$allowed	= false;
+		$ip			= $request->header("Remote Address") ?: $request->header("X-Client-Ip") ?: $request->header("X-Forwarded-For");
+		if ($ip && $webhookConfig["strong_ip_validation"])
 		{
 			foreach ($webhookConfig["whitelist"] as $test) $allowed |= \SnooPHP\Utils::validateIp($ip, $test);
-			if (!$allowed) Response::abort(400, [
+			if (!$allowed) Response::abort(403, [
 				"status"		=> "ERROR",
 				"description"	=> "ip not whitelisted"
 			]);
@@ -49,7 +58,8 @@ class GitHubWebhook extends Webhook
 		// Run script
 		if (file_exists($webhookConfig["script"]))
 		{
-			$output = shell_exec($webhookConfig["script"]." ".$request->header("X-GitHub-Delivery")." ".(isset($webhookConfig["branch"]) ? $webhookConfig["branch"] : "master"));
+			$script	= $webhookConfig["script"]." {$request->header("X-GitHub-Delivery")} ".($webhookConfig["branch"] ?? "master");
+			$output	= `$script`;
 			return Response::json([
 				"status"		=> "OK",
 				"description"	=> "webhook deployed",
@@ -57,11 +67,9 @@ class GitHubWebhook extends Webhook
 			]);
 		}
 		else
-		{
 			Response::abort(500, [
 				"status"		=> "ERROR",
 				"description"	=> "webhook script not found"
 			]);
-		}
 	}
 }
