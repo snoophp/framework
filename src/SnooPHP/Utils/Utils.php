@@ -1,6 +1,6 @@
 <?php
 
-namespace SnooPHP;
+namespace SnooPHP\Utils;
 
 use SnooPHP\Http\Request;
 use SnooPHP\Vue\Component;

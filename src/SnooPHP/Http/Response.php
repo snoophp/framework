@@ -2,7 +2,7 @@
 
 namespace SnooPHP\Http;
 
-use SnooPHP\Utils;
+use SnooPHP\Utils\Utils;
 
 /**
  * Response to send to the client
