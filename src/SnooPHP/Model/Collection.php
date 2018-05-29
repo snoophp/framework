@@ -110,23 +110,19 @@ class Collection
 	{
 		if (!$criteria)
 		{
-			error_log("no criteria specified");
+			error_log("collection error: no criteria specified");
 			return null;
 		}
 
 		else if (is_callable($criteria))
 		{
 			foreach ($this->models as $model)
-			{
 				if ($criteria($model)) return $model;
-			}
 		}
 		else if (is_a($criteria, "SnooPHP\Model\Model"))
 		{
 			foreach ($this->models as $i => $model)
-			{
 				if ($model == $criteria) return $i;
-			}
 		}
 
 		return null;
@@ -165,11 +161,11 @@ class Collection
 	 * Expands nodes within this collection
 	 * 
 	 * @param string|array	$edges	edges to expand
-	 * @param bool			$force	assumes all models are nodes
+	 * @param bool			$force	if true assumes all models are nodes
 	 * 
 	 * @return Collection return this collection
 	 */
-	public function expand($edges = [], $force = true)
+	public function expand($edges = [], $force = false)
 	{
 		if ($force)	foreach ($this->models as $i => $model) $this->models[$i]->expand($edges);
 		else		foreach ($this->models as $i => $model) if (is_a($model, "SnooPHP\Model\Node")) $this->models[$i]->expand($edges);

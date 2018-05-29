@@ -26,9 +26,7 @@ class Db
 
 		// Execute
 		if ($status = $query->execute())
-		{
 			return $query->fetchAll(PDO::FETCH_ASSOC);
-		}
 
 		return false;
 	}
@@ -97,9 +95,7 @@ class Db
 				if (!$result) return false;
 			}
 			else
-			{
 				if (!$result = $db->setAttribute($attributeName, $attributeValue)) return false;
-			}
 		}
 
 		// Get
@@ -110,9 +106,7 @@ class Db
 			return $attributes;
 		}
 		else
-		{
 			return $db->getAttribute($attributeName);
-		}
 	}
 
 	/**

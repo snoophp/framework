@@ -52,17 +52,13 @@ abstract class Node extends Model
 
 				// Call subedges
 				if (is_a($node, "SnooPHP\Model\Node"))
-				{
 					$node->expand($subedges);
-				}
 				else if (is_a($node, "SnooPHP\Model\Collection"))
 				{
 					$node->each(function($subnode) use($subedges) {
 
 						if (is_a($subnode, "SnooPHP\Model\Node"))
-						{
 							$subnode->expand($subedges);
-						}
 					});
 					$node = $node->array();
 				}
@@ -73,7 +69,7 @@ abstract class Node extends Model
 	}
 
 	/**
-	 * Takes a string of edges to expand and returns an array
+	 * Takes a string of edges to expand and returns an array or a json string
 	 * 
 	 * @param string	$edges	string of edges
 	 * @param bool		$json	if true return json string instead of array
@@ -85,7 +81,7 @@ abstract class Node extends Model
 		$parser = __DIR__."/graphparser";
 		if (!file_exists($parser)) return false;
 
-		$out = `{$parser} "{$edges}"`;
+		$out = `$parser "$edges"`;
 		return $json ? $out : from_json($out, true);
 	}
 }

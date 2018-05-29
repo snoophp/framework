@@ -60,7 +60,11 @@ class Model
 	 */
 	public static function select($queryString = "", array $queryParams = [])
 	{
-		$rows = Db::query("SELECT ".static::tableName().".* FROM ".static::tableName()." ".$queryString, $queryParams);
+		$rows = Db::query(
+			"SELECT ".static::tableName().".* FROM ".static::tableName()." ".$queryString,
+			$queryParams,
+			static::$dbName
+		);
 
 		if ($rows === false)
 		{
@@ -97,7 +101,7 @@ class Model
 		$tableName = static::tableName();
 		$idColumn = $idColumn ?: static::$idColumn;
 
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		SELECT *
 		FROM ".$tableName."
 		WHERE ".$idColumn." = :id
@@ -134,7 +138,7 @@ class Model
 		$refColumn = static::$idColumn;
 		$forColumn = $forColumn ?: strtolower(static::modelName())."_id";
 
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		SELECT F.*
 		FROM ".$refTable." as R, ".$forTable." as F
 		WHERE R.".$refColumn." = F.".$forColumn." AND R.".$refColumn." = :id
@@ -177,7 +181,7 @@ class Model
 		SELECT F.*
 		FROM ".$refTable." as R, ".$forTable." as F
 		WHERE R.".$refColumn." = F.".$forColumn." AND R.".$refColumn." = :id ".$condition."
-		", array_merge(["id" => $this->$refColumn], $conditionParams));
+		", array_merge(["id" => $this->$refColumn], $conditionParams), static::$dbName);
 
 		if ($rows === false)
 		{
@@ -216,7 +220,7 @@ class Model
 		$refColumn = $refClass::$idColumn;
 		$forColumn = $forColumn ?: strtolower($refClass::modelName())."_id";
 
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		SELECT R.*
 		FROM ".$refTable." as R, ".$forTable." as F
 		WHERE R.".$refColumn." = F.".$forColumn." AND F.".$forColumn." = :id
@@ -264,7 +268,7 @@ class Model
 			$updates = substr($updates, 1, -1);
 
 			// Update query
-			$query = Db::instance()->prepare("
+			$query = Db::instance(static::$dbName)->prepare("
 			UPDATE ".static::tableName()."
 			SET ".$updates."
 			WHERE ".$idColumn." = :id
@@ -297,7 +301,7 @@ class Model
 			$values = substr($values, 1, -1);
 
 			// Insert query
-			$query = Db::instance()->prepare("
+			$query = Db::instance(static::$dbName)->prepare("
 			INSERT INTO ".static::tableName()."(".$into.")
 			VALUES (".$values.")
 			");
@@ -327,7 +331,7 @@ class Model
 		$idColumn = static::$idColumn;
 		if (!isset($this->$idColumn)) return false;
 		
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		DELETE FROM ".static::tableName()."
 		WHERE ".static::$idColumn." = :id
 		");
@@ -356,7 +360,7 @@ class Model
 			return static::purge();
 		}
 
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		DELETE FROM ".static::tableName()."
 		WHERE ".$condition."
 		");
@@ -378,14 +382,12 @@ class Model
 	 */
 	public static function purge()
 	{
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		TRUNCATE ".static::tableName()."
 		");
 		
-		if ($query->execute())
-		{
-			return true;
-		}
+		// Run purge query
+		if ($query->execute()) return true;
 
 		return false;
 	}
@@ -398,7 +400,7 @@ class Model
 	public static function resetAutoIncrement()
 	{
 		$tableName = static::tableName();
-		return Db::query("alter table $tableName AUTO_INCREMENT = 1") !== false;
+		return Db::query("alter table $tableName AUTO_INCREMENT = 1", [], static::$dbName) !== false;
 	}
 
 	/**
@@ -408,7 +410,7 @@ class Model
 	 */
 	public function json()
 	{
-		return json_encode($this);
+		return to_json($this);
 	}
 
 	/**
@@ -421,9 +423,8 @@ class Model
 		$idColumn = static::$idColumn;
 		$out = static::modelName()." #".$this->$idColumn.":\n";
 		foreach (get_object_vars($this) as $var => $val)
-		{
 			if (isset($this->$var) && $this->$var) $out.= " - ".$var." = ".print_r($val, true)."\n";
-		}
+		
 		return $out;
 	}
 	
@@ -434,7 +435,23 @@ class Model
 	 */
 	public static function tableName()
 	{
-		return strtolower((new ReflectionClass(get_called_class()))->getShortName())."s";
+		// Convert from camel case to underscore
+		$cc		= static::modelName();
+		$cc[0]	= strtolower($cc[0]);
+		return preg_replace_callback("/[A-Z]/", function($uppercase) {
+
+			return "_".strtolower($uppercase[0]);
+		}, $cc)."s";
+	}
+
+	/**
+	 * Return the name of this model
+	 * 
+	 * @return string
+	 */
+	protected static function modelName()
+	{
+		return (new ReflectionClass(get_called_class()))->getShortName();
 	}
 
 	/**
@@ -468,16 +485,6 @@ class Model
 	}
 
 	/**
-	 * Return the name of this model
-	 * 
-	 * @return string
-	 */
-	protected static function modelName()
-	{
-		return (new ReflectionClass(get_called_class()))->getShortName();
-	}
-
-	/**
 	 * Return name of table columns
 	 * 
 	 * @return string[]|null
@@ -487,7 +494,7 @@ class Model
 		// Global instance
 		global $dbConfig;
 
-		$query = Db::instance()->prepare("
+		$query = Db::instance(static::$dbName)->prepare("
 		SELECT COLUMN_NAME
 		FROM INFORMATION_SCHEMA.COLUMNS
 		WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = :tableName
@@ -502,9 +509,8 @@ class Model
 			// Populate array
 			$columns = [];
 			foreach ($rows as $row)
-			{
 				$columns[] = $row[0];
-			}
+			
 			return $columns;
 		}
 
