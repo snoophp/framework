@@ -31,7 +31,7 @@ if (!function_exists("mime_type"))
 	{
 		$fileInfo	= new finfo();
 		$type		= $fileInfo ? $fileInfo->file($filename, FILEINFO_MIME_TYPE) : false;
-		error_log($type);
+		
 		// If plain/text, try to use extension
 		if ($type === "text/plain")
 		{

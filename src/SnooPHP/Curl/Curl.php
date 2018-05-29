@@ -3,7 +3,7 @@
 namespace SnooPHP\Curl;
 
 /**
- * Provides a friendly interface to perform HTTP requests using cURL library
+ * Provides a friendly interface to perform HTTP requests using native php curl library
  * 
  * @author sneppy
  */
@@ -40,7 +40,7 @@ abstract class Curl
 	protected $info = null;
 
 	/**
-	 * Create a new cURL session
+	 * Create a new Curl session
 	 * 
 	 * @param string	$url		session url
 	 * @param array		$options	set of options

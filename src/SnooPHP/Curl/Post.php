@@ -10,20 +10,23 @@ namespace SnooPHP\Curl;
 class Post extends Curl
 {
 	/**
-	 * Create a new POST cURL session
+	 * Create a new POST Curl session
 	 * 
 	 * @param string		$url		session url
 	 * @param string|array	$post		post data as an associative array or url encoded string
 	 * @param array			$headers	list of http headers
+	 * @param bool			$initOnly	if true the session won't be executed
 	 */
-	public function __construct($url, $post = "", array $headers = [])
+	public function __construct($url, $post = "", array $headers = [], $initOnly = false)
 	{
+		// If string, set x-www-form-urlencoded header
 		if (is_string($post)) $headers["Content-Type"] = "application/x-www-form-urlencoded";
+
 		parent::__construct($url, [
 			CURLOPT_CUSTOMREQUEST	=> "POST",
 			CURLOPT_POSTFIELDS		=> $post,
 			CURLOPT_RETURNTRANSFER	=> true
-		], $headers, false);
+		], $headers, $initOnly);
 	}
 
 	/**
@@ -32,11 +35,13 @@ class Post extends Curl
 	 * @param string		$url		request url
 	 * @param string		$authKey	authorization key
 	 * @param string|array	$post		post data as an associative array or urlencoded string
+	 * @param array			$headers	list of additional http headers
+	 * @param bool			$initOnly	if true the session won't be executed
 	 * 
 	 * @return Post
 	 */
-	public static function withAuth($url, $authKey = "", $post = "")
+	public static function withAuth($url, $authKey = "", $post = "", array $headers = [], $initOnly = false)
 	{
-		return new Post($url, $post, ["Authorization" => $authKey]);
+		return new Post($url, $post, array_merge(["Authorization" => $authKey], $headers), $initOnly);
 	}
 }

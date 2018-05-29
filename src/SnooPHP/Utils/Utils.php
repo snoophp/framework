@@ -59,48 +59,6 @@ class Utils
 	}
 
 	/**
-	 * Merge together styles and scripts blocks after body
-	 * 
-	 * @ignore don't use this function
-	 * 
-	 * @param string $content a valid html document content
-	 * 
-	 * @return string
-	 */
-	public static function optimizeView($content)
-	{
-		// Valid html only contains one body block
-		$bodyStart	= strpos($content, "<body");
-		$bodyEnd	= strpos($content, "</body") + 7;
-		if ($bodyStart !== false && $bodyEnd !== false)
-		{
-			$preBody	= substr($content, 0, $bodyStart);	
-			$body		= substr($content, $bodyStart, $bodyEnd - $bodyStart);	
-			$postBody	= substr($content, $bodyEnd);
-			$styles		= "";
-			$scripts	= "";
-			
-			/** @todo not sure if it's a good idea */
-			if (false)
-			{
-				// Match all style and script blocks
-				// Content is merged together and passed to the css preprocessor (if any)
-				if (preg_match_all("~(?:<style>\n?((?:(?!</).)+)</style>|<script>\n?((?:(?!</script>).)+)</script>)~s", $postBody, $matches))
-				{
-					foreach ($matches[1] as $styleContent)	$styles		.= $styleContent;
-					foreach ($matches[2] as $scriptContent)	$scripts	.= $scriptContent;
-				}
-				$postBody = "<script>$scripts</script>\n<style>$styles</style>";
-
-				// Recompose
-				$content = $preBody.$body.$postBody;
-			}
-		}
-
-		return $content;
-	}
-
-	/**
 	 * Compile style content using specified css preprocessor
 	 * 
 	 * @param string	$content	content to compile
@@ -151,9 +109,7 @@ class Utils
 	public static function minifyJs($content)
 	{
 		if (!empty(`which uglifyjs`))
-		{
 			return `echo "$content" | uglifyjs --compress --mangle --mangle-props`;
-		}
 
 		return $content;
 	}
@@ -219,9 +175,7 @@ class Utils
 	{
 		$publicPath = path("public");
 		if (preg_match("@^{$publicPath}(.*)$@", $absolutePath, $matches))
-		{
 			return $matches[1];
-		}
 
 		return false;
 	}
@@ -255,6 +209,7 @@ class Utils
 	 */
 	public static function validateIp($ip, $test)
 	{
+		/** @todo not working, I think ... */
 		if (!is_string($ip) || !is_string($test)) return false;
 		$testBytes = preg_split("@(?:\.|/)@", $test);
 		$ipBytes = preg_split("@(?:\.|/)@", $ip);
@@ -265,6 +220,7 @@ class Utils
 			$test = $test >> (32 - $mask);
 			$ip = $ip >> (32 - $mask);
 		}
+
 		return $test === $ip;
 	}
 }

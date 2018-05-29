@@ -10,13 +10,14 @@ namespace SnooPHP\Curl;
 class Put extends Curl
 {
 	/**
-	 * Create a new PUT cURL session
+	 * Create a new PUT Curl session
 	 * 
 	 * @param string		$url		session url
 	 * @param string|array	$put		data as an associative array or urlencoded string
 	 * @param array			$headers	list of http headers
+	 * @param bool			$initOnly	if true the session won't be executed
 	 */
-	public function __construct($url, $put = "", array $headers = [])
+	public function __construct($url, $put = "", array $headers = [], $initOnly = false)
 	{
 		if (is_string($put)) $headers["Content-Type"] = "application/x-www-form-urlencoded";
 		parent::__construct($url, [
@@ -32,11 +33,13 @@ class Put extends Curl
 	 * @param string		$url		request url
 	 * @param string		$authKey	authorization key
 	 * @param string|array	$put		data as an associative array or urlencoded string
+	 * @param array			$headers	list of additional http headers
+	 * @param bool			$initOnly	if true the session won't be executed
 	 * 
 	 * @return Put
 	 */
-	public static function withAuth($url, $authKey = "", $put = "")
+	public static function withAuth($url, $authKey = "", $put = "", array $headers = [], $initOnly = false)
 	{
-		return new Put($url, $put, ["Authorization" => $authKey]);
+		return new Put($url, $put, array_merge(["Authorization" => $authKey], $headers), $initOnly);
 	}
 }
