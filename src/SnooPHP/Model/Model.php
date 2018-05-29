@@ -7,7 +7,7 @@ use \PDO;
 
 /**
  * A model represents an object of the application
- * Each model has a 1:1 connection with a related db table (User -> users)
+ * Each model has a 1:1 connection with a related db table (e.g. User -> users)
  * 
  * @author sneppy
  */
@@ -67,13 +67,9 @@ class Model
 		);
 
 		if ($rows === false)
-		{
 			return false;
-		}
 		else if (!count($rows))
-		{
 			return new Collection([]);
-		}
 
 		// Populate models
 		$collection = [];
@@ -184,13 +180,9 @@ class Model
 		", array_merge(["id" => $this->$refColumn], $conditionParams), static::$dbName);
 
 		if ($rows === false)
-		{
 			return false;
-		}
 		else if (!count($rows))
-		{
 			return new Collection([]);
-		}
 
 		// Populate models
 		$collection = [];
@@ -278,10 +270,7 @@ class Model
 					$query->bindValue(":".$column, $this->encodeValue($column));
 			$query->bindValue(":id", $this->$idColumn);
 
-			if ($query->execute())
-			{
-				return $this;
-			}
+			if ($query->execute()) return $this;
 
 			return false;
 		}
@@ -306,9 +295,7 @@ class Model
 			VALUES (".$values.")
 			");
 			foreach ($columns as $column)
-			{
 				if ($column !== $idColumn && isset($this->$column)) $query->bindValue(":".$column, $this->encodeValue($column));
-			}
 
 			if ($query->execute())
 			{
@@ -355,10 +342,7 @@ class Model
 	 */
 	public static function deleteWhere($condition = null, array $conditionParams = [])
 	{
-		if (!$condition)
-		{
-			return static::purge();
-		}
+		if (!$condition) return static::purge();
 
 		$query = Db::instance(static::$dbName)->prepare("
 		DELETE FROM ".static::tableName()."
@@ -366,10 +350,7 @@ class Model
 		");
 		foreach ($conditionParams as $column => $val) $query->bindValue(":".$column, $val ?: null);
 
-		if ($query->execute())
-		{
-			return $query->rowCount();
-		}
+		if ($query->execute()) return $query->rowCount();
 
 		return false;
 	}

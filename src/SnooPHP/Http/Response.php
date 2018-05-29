@@ -35,9 +35,9 @@ class Response
 	 */
 	public function __construct($content = "", $code = 200, array $headers = [])
 	{
-		$this->content = $content;
-		$this->code = $code;
-		$this->headers = $headers;
+		$this->content	= $content;
+		$this->code		= $code;
+		$this->headers	= $headers;
 	}
 
 	/**
@@ -50,9 +50,7 @@ class Response
 
 		// Set response header
 		foreach ($this->headers as $header => $val)
-		{
-			header($header.": ".$val);
-		}
+			header("$header: $val");
 
 		// Echo content
 		echo $this->content;
@@ -61,27 +59,26 @@ class Response
 	/**
 	 * Get or set content
 	 * 
-	 * @param string|null $content content to set or null to retrieve
+	 * @param string|null $content content to set or null to retrieve only
 	 * 
 	 * @return string
 	 */
 	public function content($content = null)
 	{
-		if ($content)
-		{
-			$this->content = $content;
-		}
-
+		if ($content) $this->content = $content;
 		return $this->content;
 	}
 
 	/**
-	 * Return http code
+	 * Get or set http code
+	 * 
+	 * @param int|null $code http code to set or null to get only
 	 * 
 	 * @return int
 	 */
-	public function code()
+	public function code($code = null)
 	{
+		if ($code) $this->code = $code;
 		return $this->code;
 	}
 
@@ -103,21 +100,13 @@ class Response
 		if ($value !== null)
 		{
 			if (is_array($value))
-			{
 				foreach ($value as $field => $val) $this->headers[$field] = $val;
-			}
 			else if (is_string($name))
-			{
 				$this->headers[$name] = $value;
-			}
 		}
 
 		// Get
-		return !$name ? $this->headers : (
-			isset($this->headers[$name]) ? $this->headers[$name] : (
-				null
-			)
-		);
+		return !$name ? $this->headers : ($this->headers[$name] ?? null);
 	}
 
 	/**
@@ -136,30 +125,32 @@ class Response
 
 		// Capture output buffer
 		ob_start();
-		include path("views")."/{$name}.php";
+		include path("views/$name.php", true);
 		$content = ob_get_contents();
 		ob_end_clean();
 
-		$content = Utils::optimizeView($content);
-
+		// Return response
 		return new static($content);
 	}
 
 	/**
 	 * Return json content
 	 * 
-	 * @param string|object|array $content data to be converted to json
+	 * @param string|mixed	$content	data to be converted to json
+	 * @param int			$code		http status code (default: 200)
 	 * 
 	 * @return Response
 	 */
-	public static function json($content)
+	public static function json($content, $code = 200)
 	{
+		// If collection get array
 		if (is_a($content, "SnooPHP\Model\Collection")) $content = $content->array();
+
+		// Return json content
 		return new static(
 			to_json($content),
-			200, [
-				"Content-Type" => "application/json"
-			]
+			200,
+			["Content-Type" => "application/json"]
 		);
 	}
 
@@ -169,23 +160,21 @@ class Response
 	 * Resource are stored in the `storage` directory
 	 * 
 	 * @param string		$file			path to the resource, relativo to the storage directory
-	 * @param string|null	$type			MIME type of the resource
-	 * @param bool			$evaluatePhp	if true php code in the resource will be evaluated before outputting the content
+	 * @param string|null	$type			MIME type of the resource (default: null)
+	 * @param bool			$evaluatePhp	if true php code in the resource will be evaluated before outputting the content (default: false)
 	 * 
 	 * @return Response
 	 */
 	public static function resource($file, $type = null, $evaluatePhp = false)
 	{
-		if ($path = path("resources/{$file}", true))
+		if ($path = path("resources/$file", true))
 		{
 			ob_start();
 			$evaluatePhp ? include($path) : readfile($path);
 			$content = ob_get_contents();
 			ob_end_clean();
 
-			return new static($content, 200, [
-				"Content-Type" => $type ?: mime_type($path)
-			]);
+			return new static($content, 200, ["Content-Type" => $type ?: mime_type($path)]);
 		}
 
 		static::abort(404, [
@@ -201,14 +190,14 @@ class Response
 	 * @param string|array	$content	optional content
 	 */
 	public static function abort($code, $content = "")
-	{		
-		// Abort routing
+	{
+		// Set response code
 		http_response_code($code);
 
 		if (is_object($content) || is_array($content))
 		{
 			header("Content-Type: application/json");
-			$content = json_encode($content);
+			$content = to_json($content);
 		}
 
 		echo $content;

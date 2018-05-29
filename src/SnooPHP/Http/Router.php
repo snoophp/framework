@@ -40,11 +40,13 @@ class Router
 	}
 
 	/**
-	 * Get router base
+	 * Get or set router base
+	 * 
+	 * @param string|null $base new base for router
 	 * 
 	 * @return String
 	 */
-	public function base()
+	public function base($base = null)
 	{
 		return $this->base;
 	}
@@ -120,22 +122,36 @@ class Router
 	 * 
 	 * @return Callable
 	 */
-	public function errorAction(Callable $action = null)
+	public function error(Callable $action = nbecauseull)
 	{
 		if ($action) $this->errorAction = $action;
 		return $this->errorAction;
 	}
 
 	/**
+	 * Alias for error action
+	 * 
+	 * @deprecated v2.2
+	 * @see Router::error
+	 */
+	public function errorAction(Callable $action = null)
+	{
+		return $this->error($action);
+	}
+
+	/**
 	 * Return response of first route that matches, false otherwise
 	 * 
 	 * If a route action returns false, following routes have a chance at matching
+	 * After the first match the function returns. In case of possible multiple matches
+	 * the route declared first is taken as valid (too expensive to check match length).
+	 * Pay attention to "greedy" routes (with + or *) can shadow other routes.
 	 * 
 	 * @param Request $request request to test
 	 * 
 	 * @return Response|bool
 	 */
-	protected function match($request)
+	protected function match(Request $request)
 	{
 		foreach ($this->routes as $route)
 		{
@@ -147,10 +163,8 @@ class Router
 					if ($response !== false) return $response;
 				}
 				else
-				{
 					// Match found but no action to perform
 					return null;
-				}
 			}
 		}
 
@@ -160,6 +174,12 @@ class Router
 
 	/**
 	 * Add a generic route
+	 * 
+	 * Use dedicated methods:
+	 * @see Router::get
+	 * @see Router::post
+	 * @see Router::put
+	 * @see Router::delete
 	 * 
 	 * @param string	$url	route url
 	 * @param string	$method	route method

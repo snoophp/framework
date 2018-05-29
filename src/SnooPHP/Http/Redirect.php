@@ -17,14 +17,19 @@ class Redirect extends Response
 	 */
 	public function __construct($url, $code = 302)
 	{
-		// Create and run redirect
+		// Check code for redirect
+		// But allow anyway
+		// Just throw a warning
+		if ($code < 300 || $code >= 400) error_log("warning: invalid http status code ($code) for redirect");
+
+		// Parent constructor with 'Location' header
 		parent::__construct("", $code, [
 			"Location" => $url
 		]);
 	}
 
 	/**
-	 * Redirect
+	 * Parse response and redirect
 	 */
 	public function parse()
 	{
@@ -34,7 +39,7 @@ class Redirect extends Response
 		// Set response header
 		foreach ($this->headers as $header => $val)
 		{
-			header($header.": ".$val);
+			header("$header: $val");
 		}
 	}
 

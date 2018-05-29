@@ -35,7 +35,7 @@ class Route
 	/**
 	 * @var array $args route arguments
 	 */
-	protected $args;
+	protected $args = [];
 
 	/**
 	 * Create a new route
@@ -124,11 +124,66 @@ class Route
 	 */
 	public function match($test)
 	{
+		// Generate pattern
+		$isArray	= [];
+		$pattern = preg_replace_callback(
+			"~/\{(?<arg>[_0-9a-zA-Z]+)(?<arr>\[\])?\}(?<num>\?|\+|\*|\{[0-9,]+\})?~",
+			function($matches) use (&$isArray) {
+				
+				$name			= $matches["arg"];
+				$isArray[$name]	= !empty($matches[2]);
+				return "(?<$name>(?:/[^\\s/?]+){$matches["num"]})";
+			},
+			$this->url
+		);
+
+		// Pattern error
+		if (!$pattern || empty($pattern))
+		{
+			// Pattern error
+			error_log("pattern error: found in route with pattern: {$this->url}");
+			return false;
+		}
+
+		// Append start, parameters and end
+		$pattern = "^$pattern/?(?:\?.*)?$";
+		echo $pattern;
+
+		// Match
+		if (preg_match("~$pattern~", $test, $matches))
+		{
+			foreach ($matches as $name => $val)
+			{
+				// Discard non-associative indexes
+				if (is_int($name))
+				{
+					if ($name === 0) $this->args[$name] = $val;
+				}
+				else
+				{
+					// Get values as array or as string
+					$val = ltrim($val, "/");
+					$this->args[$name] = $isArray[$name] ? explode("/", $val) : $val;
+				}
+			}
+
+			// It's a match!
+			return true;
+		}
+
+		// Better luck next time!
+		return false;
+
+		/*************
+		 * LEGACY CODE
+		 *************/
+
 		// Get argument names
 		preg_match_all("/{([^\s}]*)}/", $this->url, $args);
+
 		// Get values
 		$pattern = preg_replace("/{[^\s}]*}/", "([^\s/?]+)", $this->url);
-		if (preg_match("@^".$pattern."(?:/)?(?:\?.*)?$@", $test, $vals) > 0)
+		if (preg_match("~^".$pattern."/?(?:\?.*)?$~", $test, $vals) > 0)
 		{
 			// Fill input array
 			$input = [];

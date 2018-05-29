@@ -6,7 +6,7 @@ use SnooPHP\Curl\Get;
 use SnooPHP\Curl\Post;
 use SnooPHP\Curl\Put;
 use SnooPHP\Curl\Delete;
-use SnooPHP\Util\Utils;
+use SnooPHP\Utils\Utils;
 
 /**
  * Http request object
@@ -100,17 +100,13 @@ class Request
 	/**
 	 * Return all request headers or a specific one
 	 * 
-	 * @param string $name field name
+	 * @param string $name header name
 	 * 
 	 * @return string|array|null
 	 */
 	public function header($name = null)
 	{
-		return !$name ? $this->headers : (
-			isset($this->headers[$name]) ? $this->headers[$name] : (
-				null
-			)
-		);
+		return !$name ? $this->headers : ($this->headers[$name] ?? null);
 	}
 
 	/**
@@ -123,11 +119,7 @@ class Request
 	 */
 	public function input($name = null, $default = null)
 	{
-		return !$name ? $this->inputs : (
-			isset($this->inputs[$name]) ? $this->inputs[$name] : (
-				$default
-			)
-		);
+		return !$name ? $this->inputs : ($this->inputs[$name] ?? $default);
 	}
 
 	/**
@@ -139,11 +131,7 @@ class Request
 	 */
 	public function file($name = null)
 	{
-		return !$name ? $this->files : (
-			isset($this->files[$name]) ? $this->files[$name] : (
-				null
-			)
-		);
+		return !$name ? $this->files : ($this->files[$name] ?? null);
 	}
 
 	/**
@@ -156,9 +144,7 @@ class Request
 	public function validateInput($rules)
 	{
 		foreach ($rules as $rule)
-		{
 			if (empty($this->inputs[$rule])) return false;
-		}
 
 		return true;
 	}
