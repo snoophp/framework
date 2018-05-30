@@ -147,7 +147,6 @@ class Route
 
 		// Append start, parameters and end
 		$pattern = "^$pattern/?(?:\?.*)?$";
-		echo $pattern;
 
 		// Match
 		if (preg_match("~$pattern~", $test, $matches))

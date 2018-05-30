@@ -122,7 +122,7 @@ class Router
 	 * 
 	 * @return Callable
 	 */
-	public function error(Callable $action = nbecauseull)
+	public function error(Callable $action = null)
 	{
 		if ($action) $this->errorAction = $action;
 		return $this->errorAction;
