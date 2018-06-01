@@ -10,9 +10,9 @@ namespace SnooPHP\Curl;
 class Put extends Curl
 {
 	/**
-	 * Create a new PUT Curl session
+	 * Create a new PUT request
 	 * 
-	 * @param string		$url		session url
+	 * @param string		$url		requested url
 	 * @param string|array	$put		data as an associative array or urlencoded string
 	 * @param array			$headers	list of http headers
 	 * @param bool			$initOnly	if true the session won't be executed
@@ -29,6 +29,8 @@ class Put extends Curl
 
 	/**
 	 * Create a new session with an authorization header
+	 * 
+	 * @deprecated v0.2.4
 	 * 
 	 * @param string		$url		request url
 	 * @param string		$authKey	authorization key

@@ -5,9 +5,14 @@ namespace SnooPHP\Curl;
 /**
  * Provides a friendly interface to perform HTTP requests using native php curl library
  * 
+ * @see Get
+ * @see Post
+ * @see Put
+ * @see Delete
+ * 
  * @author sneppy
  */
-abstract class Curl
+class Curl
 {
 	/**
 	 * @var resource $curl underlying curl resource
@@ -132,7 +137,7 @@ abstract class Curl
 	/**
 	 * Get session info
 	 * 
-	 * @param string $info if set return associated information
+	 * @param string $name if set return associated information
 	 * 
 	 * @return array|string
 	 */
@@ -219,5 +224,49 @@ abstract class Curl
 		}
 
 		return strlen($header);
+	}
+
+	/**
+	 * Create appropriate session
+	 * 
+	 * @param string		$method		method string
+	 * @param string		$uri		resource uri
+	 * @param string|array	$data		data to post [default: ""]
+	 * @param array			$headers	set of additional headers [default: []]
+	 * @param array			$options	set of additional options [default: []]
+	 * @param bool			$initOnly	if true don't send request on creation [default: false]
+	 * 
+	 * @return Get|Post|Put|Delete|null null if $method doesn't match any available method
+	 */
+	public static function create($method, $uri, $data = "", array $headers = [], array $options = [], $initOnly = false)
+	{
+		// Null if method is not valid
+		$curl = null;
+
+		// Compare method
+		if (!strcasecmp($method, "GET"))
+			$curl = new static($uri, $options + [
+				CURLOPT_CUSTOMREQUEST	=> "GET",
+				CURLOPT_RETURNTRANSFER	=> true
+			], $headers, $initOnly);
+		else if (!strcasecmp($method, "POST"))
+			$curl = new static($uri, $options + [
+				CURLOPT_CUSTOMREQUEST	=> "POST",
+				CURLOPT_POSTFIELDS		=> $data,
+				CURLOPT_RETURNTRANSFER	=> true
+			], $headers, $initOnly);
+		else if (!strcasecmp($method, "PUT"))
+			$curl = new static($uri, $options + [
+				CURLOPT_CUSTOMREQUEST	=> "PUT",
+				CURLOPT_POSTFIELDS		=> $data,
+				CURLOPT_RETURNTRANSFER	=> true
+			], $headers, $initOnly);
+		else if (!strcasecmp($method, "DELETE"))
+			$curl = new static($uri, $options + [
+				CURLOPT_CUSTOMREQUEST	=> "DELETE",
+				CURLOPT_RETURNTRANSFER	=> true
+			], $headers, $initOnly);
+
+		return $curl;
 	}
 }

@@ -10,9 +10,9 @@ namespace SnooPHP\Curl;
 class Delete extends Curl
 {
 	/**
-	 * Create a new DELETE Curl session
+	 * Create a new DELETE request
 	 * 
-	 * @param string	$url		session url
+	 * @param string	$url		requested url
 	 * @param array		$headers	list of http headers
 	 * @param bool		$initOnly	if true the session won't be executed
 	 */
@@ -26,6 +26,8 @@ class Delete extends Curl
 
 	/**
 	 * Create a new session with an authorization header
+	 * 
+	 * @deprecated v0.2.4
 	 * 
 	 * @param string	$url		request url
 	 * @param string	$authKey	authorization key
