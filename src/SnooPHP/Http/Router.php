@@ -28,6 +28,11 @@ class Router
 	protected $errorAction = null;
 
 	/**
+	 * @var array $defaultHeaders headers to append to all response
+	 */
+	protected $defaultHeaders = [];
+
+	/**
 	 * Create a new router
 	 * 
 	 * Note that base only affects routes creation, not routes matching
@@ -52,7 +57,9 @@ class Router
 	}
 
 	/**
-	 * Parse request
+	 * Handle request
+	 * 
+	 * Also appends default headers if ignoreDefaultHeaders is not true
 	 * 
 	 * @param Request $request request to handle
 	 * 
@@ -60,7 +67,9 @@ class Router
 	 */
 	public function handle(Request $request)
 	{
-		return $this->match($request);
+		$res = $this->match($request);
+		if ($res && !$res->ignoreDefaultHeaders) $res->header($this->defaultHeaders);
+		return $res;
 	}
 
 	/**
@@ -137,6 +146,40 @@ class Router
 	public function errorAction(Callable $action = null)
 	{
 		return $this->error($action);
+	}
+
+	/**
+	 * Add one or more default headers
+	 * 
+	 * also returns current default headers
+	 * 
+	 * @param array $headers header(s) to be added
+	 * 
+	 * @return array list of current default headers
+	 */
+	public function defaultHeader(array $headers = [])
+	{
+		$this->defaultHeaders = array_merge($this->defaultHeaders, $headers);
+
+		return $this->defaultHeaders;
+	}
+
+	/**
+	 * Remove one or more default headers
+	 * 
+	 * laso returns current default headers
+	 * 
+	 * @param string|array $headers header(s) to be removed
+	 * 
+	 * @return array list of current default headers
+	 */
+	public function removeDefaultHeader($headers = "")
+	{
+		foreach ($headers as $header)
+			foreach ($this->defaultHeaders as $h => $v)
+				if ($header === $h) unset($this->defaultHeaders[$h]);
+
+		return $this->defaultHeaders;
 	}
 
 	/**

@@ -2,11 +2,8 @@
 
 namespace SnooPHP\Http;
 
-use SnooPHP\Curl\Get;
-use SnooPHP\Curl\Post;
-use SnooPHP\Curl\Put;
-use SnooPHP\Curl\Delete;
 use SnooPHP\Utils\Utils;
+use SnooPHP\Curl\Curl;
 
 /**
  * Http request object
@@ -125,7 +122,7 @@ class Request
 	/**
 	 * Return request input files
 	 * 
-	 * @param string	$name	file name or null to return whole inputs array
+	 * @param string $name file name or null to return whole inputs array
 	 * 
 	 * @return array|mixed
 	 */
@@ -141,7 +138,7 @@ class Request
 	 * 
 	 * @return bool
 	 */
-	public function validateInput($rules)
+	public function validateInput(array $rules)
 	{
 		foreach ($rules as $rule)
 			if (empty($this->inputs[$rule])) return false;
@@ -158,7 +155,7 @@ class Request
 	 * 
 	 * @return Request return this request
 	 */
-	protected function injectInput($inputs)
+	protected function injectInput(array $inputs)
 	{
 		$this->inputs = array_merge($this->inputs, $inputs);
 		return $this;
@@ -168,25 +165,14 @@ class Request
 	 * Forward this request to another host
 	 * 
 	 * @param string	$host		target host
-	 * @param array		$headers	optional additional headers
+	 * @param array		$headers	additional headers [default: []]
 	 * 
 	 * @return Curl
 	 */
 	public function forward($host, array $headers = [])
 	{
-		// Merge additional headers
-		$headers = array_merge($this->headers, $headers);
-
-		if ($this->method === "GET")
-			$curl	= new Get($host.$this->url, $headers);
-		else if ($this->method === "POST")
-			$curl	= new Post($host.$this->url, $this->inputs, $headers);
-		else if ($this->method === "PUT")
-			$curl	= new Put($host.$this->url, $this->inputs, $headers);
-		else if ($this->method === "DELETE")
-			$curl	= new Delete($host.$this->url, $headers);
-		
-		return $curl;
+		// Create and run request		
+		return Curl::create($this->method, $host.$this->url, $this->inputs, array_merge($this->headers, $headers));
 	}
 
 	/**

@@ -127,12 +127,13 @@ class Route
 		// Generate pattern
 		$isArray	= [];
 		$pattern = preg_replace_callback(
-			"~/\{(?<arg>[_0-9a-zA-Z]+)(?<arr>\[\])?\}(?<num>\?|\+|\*|\{[0-9,]+\})?~",
+			"~/\{(?<arg>\w+)(?<arr>\[\])?\}(?<num>\?|\+|\*|\{[0-9,]+\})?~",
 			function($matches) use (&$isArray) {
 				
 				$name			= $matches["arg"];
+				$num			= $matches["num"] ?? "";
 				$isArray[$name]	= !empty($matches[2]);
-				return "(?<$name>(?:/[^\\s/?]+){$matches["num"]})";
+				return "(?<$name>(?:/[^\\s/?]+)$num)";
 			},
 			$this->url
 		);
@@ -171,26 +172,6 @@ class Route
 		}
 
 		// Better luck next time!
-		return false;
-
-		/*************
-		 * LEGACY CODE
-		 *************/
-
-		// Get argument names
-		preg_match_all("/{([^\s}]*)}/", $this->url, $args);
-
-		// Get values
-		$pattern = preg_replace("/{[^\s}]*}/", "([^\s/?]+)", $this->url);
-		if (preg_match("~^".$pattern."/?(?:\?.*)?$~", $test, $vals) > 0)
-		{
-			// Fill input array
-			$input = [];
-			foreach ($args[1] as $i => $arg) $this->args[$arg] = $vals[$i + 1];
-
-			return true;
-		}
-		
 		return false;
 	}
 }

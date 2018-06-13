@@ -12,6 +12,11 @@ use SnooPHP\Utils\Utils;
 class Response
 {
 	/**
+	 * @var bool $ignoreDefaultHeaders if true default headers won't be appended to response
+	 */
+	public $ignoreDefaultHeaders = false;
+
+	/**
 	 * @var string $content Response content (can be null)
 	 */
 	protected $content;
@@ -85,6 +90,8 @@ class Response
 	/**
 	 * Get or set header
 	 * 
+	 * @deprecated v0.2.5
+	 * 
 	 * If both parameters are null all headers are returned
 	 * otherwise the header identified by $name field is returned
 	 * and if $value is not null the field value is updated
@@ -94,7 +101,7 @@ class Response
 	 * 
 	 * @return string|array
 	 */
-	public function header($name = null, $value = null)
+	public function header_old($name = null, $value = null)
 	{
 		// Set
 		if ($value !== null)
@@ -107,6 +114,24 @@ class Response
 
 		// Get
 		return !$name ? $this->headers : ($this->headers[$name] ?? null);
+	}
+
+	/**
+	 * Get or set header
+	 * 
+	 * If $header is a string, the method returns the associated value. in any other case, the full array of headers is returned
+	 * if $header is an array, the list of headers is appended to the current one
+	 * 
+	 * @param string|null|array $header name of header to retrieve, null or list of headers to append
+	 * 
+	 * @return string|array
+	 */
+	public function header($header = [])
+	{
+		if (is_array($header))
+			$this->headers = array_merge($this->headers, $header);
+		
+		return is_string($header) ? ($this->headers[$header] ?? null) : $this->headers;
 	}
 
 	/**
@@ -150,7 +175,7 @@ class Response
 		return new static(
 			to_json($content),
 			200,
-			["Content-Type" => "application/json"]
+			["Content-Type" => "application/json; Charset=\"UTF-8\""]
 		);
 	}
 
