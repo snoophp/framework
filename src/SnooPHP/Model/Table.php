@@ -136,6 +136,20 @@ class Table
 	}
 
 	/**
+	 * Add a decimal column
+	 * 
+	 * @param string	$name		column name
+	 * @param int		$size		total number of digits
+	 * @param int		$precision	number of decimal digits
+	 * 
+	 * @return Column
+	 */
+	public function decimal($name, $size = 11, $precision = 2)
+	{
+		return $this->add($name, "decimal")->size("$size, $precision");
+	}
+
+	/**
 	 * Add a boolean column (using TINYINT(1))
 	 * 
 	 * @param string	$name	column name
@@ -372,7 +386,7 @@ class Table
 				// Close chain
 				if ($oldColumn->property("uniqueComposite") === true)
 				{
-					$status &= Db::query("alter table drop unique key {$tableName}_".implode("_", $uniqueChain), [], $schema);
+					$status &= Db::query("alter table drop unique key {$this->name}_".implode("_", $uniqueChain), [], $schema);
 					$uniqueChain = [];
 				}
 			}
@@ -383,7 +397,7 @@ class Table
 				// Close chain
 				if ($oldColumn->property("primaryComposite") === true)
 				{
-					$status &= Db::query("alter table drop primary key {$tableName}_".implode("_", $primaryChain), [], $schema);
+					$status &= Db::query("alter table drop primary key {$this->name}_".implode("_", $primaryChain), [], $schema);
 					$primaryChain = [];
 				}
 			}
@@ -394,7 +408,7 @@ class Table
 				// Close chain
 				if ($oldColumn->property("foreignComposite") === true)
 				{
-					$status &= Db::query("alter table drop foreign key {$tableName}_".implode("_", $foreignChain), [], $schema);
+					$status &= Db::query("alter table drop foreign key {$this->name}_".implode("_", $foreignChain), [], $schema);
 					$foreignChain = [];
 				}
 			}
@@ -428,11 +442,11 @@ class Table
 				// Drop old constraints
 				$constraints = [];
 				if ($oldColumn->property("unique"))
-					$constraints[] = "drop unique key UK_{$tableName}_{$name}";
+					$constraints[] = "drop unique key UK_{$this->name}_{$name}";
 				if ($oldColumn->property("primary"))
-					$constraints[] = "drop primary key PK_{$tableName}_{$name}";
+					$constraints[] = "drop primary key PK_{$this->name}_{$name}";
 				if ($oldColumn->property("foreign"))
-					$constraints[] = "drop foreign key FK_{$tableName}_{$name}";
+					$constraints[] = "drop foreign key FK_{$this->name}_{$name}";
 				$status &= Db::query("alter table {$this->name()} ".implode(",", $constraints), [], $schema) !== false;
 
 				// Generate column query

@@ -66,6 +66,8 @@ abstract class Node extends Model
 				$this->$edge = $node;
 			}
 		}
+
+		return $this;
 	}
 
 	/**

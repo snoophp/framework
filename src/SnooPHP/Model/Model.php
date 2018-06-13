@@ -90,7 +90,7 @@ class Model
 	 * @param mixed		$id			id of the model
 	 * @param string	$idColumn	optional id column different from default $idColumn
 	 * 
-	 * @return Model|null|bool
+	 * @return static|null|bool
 	 */
 	public static function find($id, $idColumn = null)
 	{
@@ -348,7 +348,7 @@ class Model
 		DELETE FROM ".static::tableName()."
 		WHERE ".$condition."
 		");
-		foreach ($conditionParams as $column => $val) $query->bindValue(":".$column, $val ?: null);
+		foreach ($conditionParams as $column => $val) $query->bindValue(is_int($column) ? $column + 1 : ":".$column, $val ?: null);
 
 		if ($query->execute()) return $query->rowCount();
 
@@ -438,11 +438,12 @@ class Model
 	/**
 	 * Convert value coming from database
 	 * 
-	 * @param string $val value to convert
+	 * @param string	$val	value to convert
+	 * @param string	$column	name of the column
 	 * 
 	 * @return mixed
 	 */
-	protected function decodeValue($val, $column)
+	protected function decodeValue($val, $column = "")
 	{
 		if (isset(static::$casts[$column]))	settype($val, static::$casts[$column]);
 		if (in_array($column, static::$jsons) && is_string($val)) $val = json_decode(unescape_unicode($val));

@@ -12,7 +12,7 @@ class Db
 	/**
 	 * Perform a generic query statement
 	 * 
-	 * @param string	$query			query string
+	 * @param string	$queryString	query string
 	 * @param array		$queryParams	query parameters
 	 * @param string	$dbName			name of the db configuration (default master)
 	 * 
@@ -22,7 +22,7 @@ class Db
 	{
 		// Prepare query
 		$query = static::instance($dbName)->prepare($queryString);
-		foreach ($queryParams as $column => $val) $query->bindValue(":".$column, $val);
+		foreach ($queryParams as $column => $val) $query->bindValue(is_int($column) ? $column + 1 : ":".$column, $val);
 
 		// Execute
 		if ($status = $query->execute())
