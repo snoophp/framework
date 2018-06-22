@@ -125,6 +125,21 @@ class Router
 	}
 
 	/**
+	 * add an OPTIONS route
+	 * 
+	 * OPTIONS route are usually required to allow CORS requests
+	 * 
+	 * @param string	$url	router url
+	 * @param Callable	$action	action to perform on match
+	 * 
+	 * @return Route
+	 */
+	public function options($url, Callable $action = null)
+	{
+		return $this->add($url, "OPTIONS", $action);
+	}
+
+	/**
 	 * Get or set error action
 	 * 
 	 * @param Callable|null $action action to be executed
@@ -135,6 +150,21 @@ class Router
 	{
 		if ($action) $this->errorAction = $action;
 		return $this->errorAction;
+	}
+
+	/**
+	 * Error response
+	 * 
+	 * @param Request|null $request incoming request
+	 * 
+	 * @return Response
+	 */
+	public function onError(Request $request = null)
+	{
+		$request = $request ?: Request::current();
+		$res = $this->error()($request);
+		if ($res && !$res->ignoreDefaultHeaders) $res->header($this->defaultHeaders);
+		return $res;
 	}
 
 	/**

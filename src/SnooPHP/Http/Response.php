@@ -175,7 +175,7 @@ class Response
 		return new static(
 			to_json($content),
 			200,
-			["Content-Type" => "application/json; Charset=\"UTF-8\""]
+			["Content-Type" => "application/json; charset=utf-8"]
 		);
 	}
 
@@ -211,21 +211,11 @@ class Response
 	/**
 	 * Generate an error response
 	 * 
-	 * @param int			$code		http response code
-	 * @param string|array	$content	optional content
+	 * @param int					$code		http response code
+	 * @param string|array|object	$content	optional content
 	 */
 	public static function abort($code, $content = "")
 	{
-		// Set response code
-		http_response_code($code);
-
-		if (is_object($content) || is_array($content))
-		{
-			header("Content-Type: application/json");
-			$content = to_json($content);
-		}
-
-		echo $content;
-		exit;
+		throw new AbortRouteException($content, $code);
 	}
 }
