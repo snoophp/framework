@@ -242,9 +242,6 @@ class Model
 	 */
 	public function save($update = null)
 	{
-		// Global instance
-		global $db;
-
 		// Get columns
 		$columns = static::tableColumns();
 		$idColumn = static::$idColumn;
@@ -279,13 +276,11 @@ class Model
 			// Build values and into
 			$values = ""; $into = "";
 			foreach ($columns as $column)
-			{
-				if ($column !== $idColumn && isset($this->$column))
+				if (isset($this->$column))
 				{
 					$into .= " ".$column.",";
 					$values .= " :".$column.",";
 				}
-			}
 			$into = substr($into, 1, -1);
 			$values = substr($values, 1, -1);
 
@@ -295,12 +290,12 @@ class Model
 			VALUES (".$values.")
 			");
 			foreach ($columns as $column)
-				if ($column !== $idColumn && isset($this->$column)) $query->bindValue(":".$column, $this->encodeValue($column));
+				if (isset($this->$column)) $query->bindValue(":".$column, $this->encodeValue($column));
 
 			if ($query->execute())
 			{
 				// Set id
-				$this->$idColumn = $db->lastInsertId();
+				$this->$idColumn = $this->$idColumn ?: Db::instance(static::$dbName)->lastInsertId();
 				return static::find($this->$idColumn);
 			}
 			
