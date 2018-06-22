@@ -2,7 +2,7 @@
 
 namespace SnooPHP\Model;
 
-use \PDO;
+use PDO;
 
 /**
  * Wrapper for mysql database operations

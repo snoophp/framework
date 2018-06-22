@@ -232,8 +232,15 @@ class Router
 			{
 				if ($action = $route->action())
 				{
-					$response = $action($request, $route->args());
-					if ($response !== false) return $response;
+					try
+					{
+						$response = $action($request, $route->args());
+						if ($response !== false) return $response;
+					}
+					catch (AbortRouteException $abort)
+					{
+						return $abort->response();
+					}
 				}
 				else
 					// Match found but no action to perform
