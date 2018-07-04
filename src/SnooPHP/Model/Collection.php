@@ -48,7 +48,7 @@ class Collection
 
 	/**
 	 * Return number of models
-	 * @see size()
+	 * @see $this::size()
 	 * 
 	 * @return int
 	 */
@@ -100,7 +100,7 @@ class Collection
 	/**
 	 * Find an element
 	 * 
-	 * @param callable|Model $criteria model to match or callable called on every element (return true if element match the criteria)
+	 * @param Callable|Model $criteria model to match or callable called on every element (return true if element match the criteria)
 	 * 
 	 * @return Model|int|null	if model is given, return index or null if not found.
 	 * 							If callable given, return matching element or null if none found.
@@ -133,13 +133,13 @@ class Collection
 	/**
 	 * Run function on each model instance (can only modify instance property)
 	 * 
-	 * @param callable	$iterator	function called on every element of the collection.
+	 * @param Callable	$iterator	function called on every element of the collection.
 	 * 								Return true to repeat on current instance, return false to break.
 	 * 								Note that you should define the parameter as a reference in order to affect it.
 	 * 
-	 * @return Collection return this collection
+	 * @return static return this collection
 	 */
-	public function each(callable $iterator)
+	public function each(Callable $iterator)
 	{
 		// No callable specified
 		if (!$iterator)
@@ -163,7 +163,7 @@ class Collection
 	 * @param string|array	$edges	edges to expand
 	 * @param bool			$force	if true assumes all models are nodes
 	 * 
-	 * @return Collection return this collection
+	 * @return static return this collection
 	 */
 	public function expand($edges = [], $force = false)
 	{
@@ -177,7 +177,7 @@ class Collection
 	 * 
 	 * @param Collection $collection collection to append
 	 * 
-	 * @return Collection this collection
+	 * @return static this collection
 	 */
 	public function append(Collection $collection)
 	{

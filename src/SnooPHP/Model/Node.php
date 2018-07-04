@@ -26,26 +26,26 @@ namespace SnooPHP\Model;
 abstract class Node extends Model
 {
 	/**
-	 * @const EDGE_CONNECTION_PREFIX prefix of edge connection methods
+	 * @var string $edgePrefix prefix of edge connection methods
 	 */
-	const EDGE_CONNECTION_PREFIX = "e_";
+	protected static $edgePrefix = "e_";
 
 	/**
 	 * Expand edges of this node
 	 * 
-	 * @param string|array|null $edges set (or string) of nodes to expand or null to expand all (use it carefully)
+	 * @param string|array $edges set (or string) of nodes to expand
 	 * 
-	 * @return Node expanded node
+	 * @return static expanded node
 	 */
-	public function expand($edges = null)
+	public function expand($edges = [])
 	{
 		// Get edges to expand
-		if ($edges) $edges = is_array($edges) ? $edges : static::parseEdgesString($edges);
-		if (!$edges || !is_array($edges)) return $this;
+		$edges = is_array($edges) ? $edges : static::parseEdgesString($edges);
+		if ($edges === false) return $this;
 
 		foreach ($edges as $edge => $subedges)
 		{
-			$edgeConnection = static::EDGE_CONNECTION_PREFIX.$edge;
+			$edgeConnection = static::$edgePrefix.$edge;
 			if (method_exists($this, $edgeConnection))
 			{
 				$node = $this->$edgeConnection();

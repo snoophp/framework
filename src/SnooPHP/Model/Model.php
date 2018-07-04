@@ -2,8 +2,9 @@
 
 namespace SnooPHP\Model;
 
-use \ReflectionClass;
-use \PDO;
+use ReflectionClass;
+use PDO;
+use PDOException;
 
 /**
  * A model represents an object of the application
@@ -21,9 +22,7 @@ class Model
 	/**
 	 * @var array $casts list of columns to cast and target type
 	 */
-	protected static $casts = [
-		"id" => "int"
-	];
+	protected static $casts = [];
 
 	/**
 	 * @var array $casts list of columns to be converted from json
@@ -56,19 +55,21 @@ class Model
 	 * @param string	$queryString query string
 	 * @param array		$queryParams query parameters
 	 * 
-	 * @return Collection|bool
+	 * @return Collection|bool return collection of results or false if fails
 	 */
 	public static function select($queryString = "", array $queryParams = [])
 	{
-		$rows = Db::query(
-			"SELECT ".static::tableName().".* FROM ".static::tableName()." ".$queryString,
-			$queryParams,
-			static::$dbName
-		);
+		$tableName = static::tableName();
+
+		$rows = Db::query("
+			select $tableName.*
+			from $tableName
+			$queryString
+		", $queryParams, static::$dbName);
 
 		if ($rows === false)
 			return false;
-		else if (!count($rows))
+		if (empty($rows))
 			return new Collection([]);
 
 		// Populate models
@@ -90,33 +91,28 @@ class Model
 	 * @param mixed		$id			id of the model
 	 * @param string	$idColumn	optional id column different from default $idColumn
 	 * 
-	 * @return static|null|bool
+	 * @return static|bool single model or false if fails
 	 */
 	public static function find($id, $idColumn = null)
 	{
 		$tableName = static::tableName();
 		$idColumn = $idColumn ?: static::$idColumn;
 
-		$query = Db::instance(static::$dbName)->prepare("
-		SELECT *
-		FROM ".$tableName."
-		WHERE ".$idColumn." = :id
-		");
-		$query->bindValue(":id", $id);
+		$rows = Db::query("
+			select *
+			from $tableName
+			where $idColumn = :id
+		", ["id" => $id], static::$dbName);
 
-		if ($query->execute())
-		{
-			// Fetch row
-			$row = $query->fetch(PDO::FETCH_ASSOC);
-			if (!$row) return null;
-			
-			// Populate model
-			$model = new static;
-			foreach ($row as $column => $val) $model->$column = $model->decodeValue($val, $column);
-			return $model;
-		}
-
-		return false;
+		if ($rows === false)
+			return false;
+		if (empty($rows))
+			return null;
+		
+		// Populate model
+		$model = new static;
+		foreach ($rows[0] as $col => $val) $model->$col = $model->decodeValue($val, $col);
+		return $model;
 	}
 
 	/**
@@ -125,7 +121,7 @@ class Model
 	 * @param string	$forClass	foreign model class name
 	 * @param string	$forColumn	foreign column if it differs from className_id (ex. user_id)
 	 * 
-	 * @return Model|bool
+	 * @return Model|bool foreign model or false if fails
 	 */
 	public function has($forClass, $forColumn = null)
 	{
@@ -134,26 +130,21 @@ class Model
 		$refColumn = static::$idColumn;
 		$forColumn = $forColumn ?: strtolower(static::modelName())."_id";
 
-		$query = Db::instance(static::$dbName)->prepare("
-		SELECT F.*
-		FROM ".$refTable." as R, ".$forTable." as F
-		WHERE R.".$refColumn." = F.".$forColumn." AND R.".$refColumn." = :id
-		");
-		$query->bindValue(":id", $this->$refColumn);
+		$rows = Db::query("
+			select F.*
+			from $refTable as R, $forTable as F
+			where R.$refColumn = F.$forColumn and R.$refColumn = :id
+		", ["id" => $this->$refColumn], static::$dbName);
 
-		if ($query->execute())
-		{
-			// Fetch row
-			$row = $query->fetch(PDO::FETCH_ASSOC);
-			if (!$row) return null;
-			
-			// Populate model
-			$forModel = new $forClass;
-			foreach ($row as $column => $val) $forModel->$column = $forModel->decodeValue($val, $column);
-			return $forModel;
-		}
-
-		return false;
+		if ($rows === false)
+			return false;
+		if (empty($rows))
+			return null;
+		
+		// Populate model
+		$forModel = new $forClass;
+		foreach ($rows[0] as $col => $val) $forModel->$col = $forModel->decodeValue($val, $col);
+		return $forModel;
 	}
 
 	/**
@@ -164,7 +155,7 @@ class Model
 	 * @param string	$condition			condition to append (AND) to the query (use R and F as Reference and Foreign tables)
 	 * @param array		$conditionParams	parameters to bind to the condition query
 	 * 
-	 * @return Collection|null
+	 * @return Collection|null collection of foreign models
 	 */
 	public function hasMany($forClass, $forColumn = null, $condition = "", array $conditionParams = [])
 	{
@@ -174,14 +165,14 @@ class Model
 		$forColumn = $forColumn ?: strtolower(static::modelName())."_id";
 
 		$rows = Db::query("
-		SELECT F.*
-		FROM ".$refTable." as R, ".$forTable." as F
-		WHERE R.".$refColumn." = F.".$forColumn." AND R.".$refColumn." = :id ".$condition."
+			select F.*
+			from $refTable as R, $forTable as F
+			where R.$refColumn = F.$forColumn and R.$refColumn = :id $condition
 		", array_merge(["id" => $this->$refColumn], $conditionParams), static::$dbName);
 
 		if ($rows === false)
 			return false;
-		else if (!count($rows))
+		if (empty($rows))
 			return new Collection([]);
 
 		// Populate models
@@ -202,7 +193,7 @@ class Model
 	 * @param string $refClass reference model class
 	 * @param string $forColumn foreign key if different from refTable_id
 	 * 
-	 * @return Model
+	 * @return Model referenced model or false if fails
 	 */
 	public function belongsTo($refClass, $forColumn = null)
 	{
@@ -212,95 +203,162 @@ class Model
 		$refColumn = $refClass::$idColumn;
 		$forColumn = $forColumn ?: strtolower($refClass::modelName())."_id";
 
-		$query = Db::instance(static::$dbName)->prepare("
-		SELECT R.*
-		FROM ".$refTable." as R, ".$forTable." as F
-		WHERE R.".$refColumn." = F.".$forColumn." AND F.".$forColumn." = :id
-		");
-		$query->bindValue(":id", $this->$forColumn);
+		$rows = Db::query("
+			select R.*
+			from $refTable as R, $forTable as F
+			where R.$refColumn = F.$forColumn and F.$forColumn = :id
+		", ["id" => $this->$forColumn], static::$dbName);
 
-		if ($query->execute())
-		{
-			$row = $query->fetch(PDO::FETCH_ASSOC);
-			if (!$row) return null;
-			
-			// Populate model
-			$refModel = new $refClass;
-			foreach ($row as $column => $val) $refModel->$column = $refModel->decodeValue($val, $column);
-			return $refModel;
-		}
-
-		return false;
+		if ($rows === false)
+			return false;
+		if (empty($rows))
+			return null;
+		
+		$refModel = new $refClass;
+		foreach ($rows[0] as $col => $val) $refModel->$col = $refModel->decodeValue($val, $col);
+		return $refModel;
 	}
 
 	/**
 	 * Save object to database, updating or inserting a new row
 	 * 
-	 * @param bool|null $update if true update model, otherwise insert (null, decide based on id column)
+	 * @param bool $create for models without an id column this determines if we insert or udpate the model
 	 * 
-	 * @return Model
+	 * @return static|bool false if fails
 	 */
-	public function save($update = null)
+	public function save($create = false)
 	{
-		// Get columns
-		$columns = static::tableColumns();
-		$idColumn = static::$idColumn;
-		$update = (isset($this->$idColumn) && $update === null) || $update;
+		// Get model informations
+		$tableName	= static::tableName();
+		$columns	= static::tableColumns();
+		$idColumn	= static::$idColumn;
 
-		if ($update)
+		$isModel	= false;
+		$into		= "";
+		$values		= "";
+		$updates	= "";
+		$condition	= "";
+		$params		= [];
+		$updateCondition = "";
+
+		// Remove columns for which no value is specified
+		foreach ($columns as $i => $column)
 		{
-			// Build updates
-			$updates = "";
-			foreach ($columns as $column)
-				if ($column !== $idColumn && !(in_array($column, static::$autos) && $this->$column === null))
-					$updates .= " ".$column." = :".$column.",";
-			$updates = substr($updates, 1, -1);
+			$name	= $column["column_name"];
+			$key	= $column["column_key"];
 
-			// Update query
-			$query = Db::instance(static::$dbName)->prepare("
-			UPDATE ".static::tableName()."
-			SET ".$updates."
-			WHERE ".$idColumn." = :id
-			");
-			foreach ($columns as $column)
-				if ($column !== $idColumn && !(in_array($column, static::$autos) && $this->$column === null))
-					$query->bindValue(":".$column, $this->encodeValue($column));
-			$query->bindValue(":id", $this->$idColumn);
-
-			if ($query->execute()) return $this;
-
-			return false;
-		}
-		else
-		{
-			// Build values and into
-			$values = ""; $into = "";
-			foreach ($columns as $column)
-				if (isset($this->$column))
-				{
-					$into .= " ".$column.",";
-					$values .= " :".$column.",";
-				}
-			$into = substr($into, 1, -1);
-			$values = substr($values, 1, -1);
-
-			// Insert query
-			$query = Db::instance(static::$dbName)->prepare("
-			INSERT INTO ".static::tableName()."(".$into.")
-			VALUES (".$values.")
-			");
-			foreach ($columns as $column)
-				if (isset($this->$column)) $query->bindValue(":".$column, $this->encodeValue($column));
-
-			if ($query->execute())
+			// Build query components
+			if (property_exists($this, $name) && !in_array($name, static::$autos))
 			{
-				// Set id
-				$this->$idColumn = $this->$idColumn ?: Db::instance(static::$dbName)->lastInsertId();
-				return static::find($this->$idColumn);
+				$into		.= "$name, ";
+				$values		.= ":$name, ";
+				$updates	.= "$name = :$name, ";
+				$condition	.= "$name = :$name and ";
+				$params[$name] = $this->encodeValue($name);
 			}
 			
-			return false;
+			// Primary keys used for selecting the correct row in update
+			if (strcasecmp($key, "PRI") === 0)
+			{
+				$updateCondition .= "$name = :$name and ";
+
+				// Check if is model with id column
+				if ($name === $idColumn) $isModel = true;
+			}
 		}
+		
+		// Remove trailing characters
+		$into				= substr($into, 0, -2);
+		$values				= substr($values, 0, -2);
+		$updates			= substr($updates, 0, -2);
+		$condition			= substr($condition, 0, -5);
+		$updateCondition	= substr($updateCondition, 0, -5);
+
+		try
+		{
+			$status = Db::query("
+				insert into $tableName ($into)
+				values ($values)
+			", $params, static::$dbName, false) !== false;
+		}
+		catch (PDOException $e)
+		{
+			// If force creation, then bubble up exception
+			if ($create) throw $e;
+
+			// Use exception to determine if it was a primary key conflict
+			if ($e->getCode() === "23000" && preg_match("/.*'PRIMARY'$/", $e->getMessage()))
+			{
+				// Try to update model
+				$status = Db::query("
+					update $tableName
+					set $updates
+					where $updateCondition
+				", $params, static::$dbName, false) !== false;
+			}
+			else
+				throw $e;
+		}
+
+		if ($status)
+		{
+			// Get last insert id
+			$lastInsertId = Db::instance(static::$dbName)->lastInsertId();
+
+			if ($lastInsertId > 0)
+				return static::find($lastInsertId);
+			else
+				return static::select("where $condition", $params, static::$dbName)->first();
+		}
+		else
+			return false;
+		
+		// Update model with id column
+		if (isset($this->$idColumn))
+			$status = Db::query("
+				update $tableName
+				set $updates
+				where $idColumn = :$idColumn
+			", $params, static::$dbName, false) !== false;
+		
+		// Create model with id column
+		else if ($isModel)
+			$status = Db::query("
+				insert into $tableName ($into)
+				values ($values)
+			", $params, static::$dbName, false) !== false;
+
+		// Create generic model
+		else if ($create)
+			$status = Db::query("
+				insert into $tableName ($into)
+				values ($values)
+			", $params, static::$dbName, false) !== false;
+
+		// Update generic model
+		else
+			$status = Db::query("
+				update $tableName
+				set $updates
+				where $updateCondition
+			", $params, static::$dbName, false) !== false;
+
+		if ($status)
+		{
+			// Try to fetch model with id
+			if ($isModel)
+			{
+				// Set id and fetch
+				$this->$idColumn = Db::instance(static::$dbName)->lastInsertId();
+				return static::find($this->$idColumn);
+			}
+			else
+			{
+				return static::select("where $condition", $params, static::$dbName)->first();
+			}
+		}
+		else
+			return false;
 	}
 
 	/**
@@ -310,73 +368,102 @@ class Model
 	 */
 	public function delete()
 	{
-		$idColumn = static::$idColumn;
-		if (!isset($this->$idColumn)) return false;
+		// Table informations
+		$tableName	= static::tableName();
+		$columns	= static::tableColumns();
+		$idColumn	= static::$idColumn;
 		
-		$query = Db::instance(static::$dbName)->prepare("
-		DELETE FROM ".static::tableName()."
-		WHERE ".static::$idColumn." = :id
-		");
-		$query->bindValue(":id", $this->$idColumn);
-
-		if ($query->execute())
+		// Use id column if possible
+		if (isset($this->$idColumn))
 		{
-			return true;
+			$status = Db::query("
+				delete from $tableName
+				where $idColumn = :id
+			", ["id" => $this->$idColumn], static::$dbName, false);
+		}
+		else
+		{
+			$condition	= "";
+			$params		= [];
+			foreach ($columns as $column)
+			{
+				$name	= $column["column_name"];
+				$key	= $column["column_key"];
+				if (isset($this->$name))
+				{
+					$condition .= "$name = :$name and ";
+					$params[$name] = $this->encodeValue($name);
+				}
+			}
+			$condition = substr($condition, 0, -5);
+
+			var_dump("
+				delete from $tableName
+				where $condition
+			");
+			var_dump($params);
+
+			$status = Db::query("
+				delete from $tableName
+				where $condition
+			", $params, static::$dbName, false);
 		}
 
-		return false;
+		return $status !== false && $status > 0;
 	}
 
 	/**
 	 * Delete all models that match condition
 	 * 
-	 * @param string	$condition if not specified purge() is called
-	 * @param array		$conditionParams condition parameters
+	 * @param string	$condition			delete condition
+	 * @param array		$conditionParams	condition parameters
 	 * 
-	 * @return bool|int
+	 * @return bool|int number of rows deleted or false if fails
 	 */
-	public static function deleteWhere($condition = null, array $conditionParams = [])
+	public static function deleteWhere($condition = "", array $conditionParams = [])
 	{
-		if (!$condition) return static::purge();
-
-		$query = Db::instance(static::$dbName)->prepare("
-		DELETE FROM ".static::tableName()."
-		WHERE ".$condition."
-		");
-		foreach ($conditionParams as $column => $val) $query->bindValue(is_int($column) ? $column + 1 : ":".$column, $val ?: null);
-
-		if ($query->execute()) return $query->rowCount();
-
-		return false;
+		$tableName = static::tableName();
+		
+		if (empty($condition))
+			return Db::query("delete from $tableName", [], static::$dbName, false);
+		else
+			return Db::query("
+				delete from $tableName
+				where $condition
+			", $conditionParams, static::$dbName, false);
 	}
 
 
 	/**
 	 * Purge this model collection
 	 * 
-	 * @return bool
+	 * @return bool query status
 	 */
 	public static function purge()
 	{
-		$query = Db::instance(static::$dbName)->prepare("
-		TRUNCATE ".static::tableName()."
-		");
-		
-		// Run purge query
-		if ($query->execute()) return true;
-
-		return false;
+		$tableName = static::tableName();
+		return Db::query("truncate $tableName", [], static::$dbName, false) !== false;
 	}
 
 	/**
 	 * Reset auto increment value
 	 * 
-	 * @return bool
+	 * @return bool query status
 	 */
 	public static function resetAutoIncrement()
 	{
 		$tableName = static::tableName();
-		return Db::query("alter table $tableName AUTO_INCREMENT = 1", [], static::$dbName) !== false;
+		return Db::query("alter table $tableName auto_increment = 1", [], static::$dbName, false) !== false;
+	}
+
+	/**
+	 * Set database connection to use
+	 * 
+	 * @param string $dbName database connection to use
+	 */
+	public static function setDbName($dbName = "master")
+	{
+		static::$dbName = $dbName;
 	}
 
 	/**
@@ -387,21 +474,6 @@ class Model
 	public function json()
 	{
 		return to_json($this);
-	}
-
-	/**
-	 * Return a string representation of the model
-	 * 
-	 * @return string
-	 */
-	public function toString()
-	{
-		$idColumn = static::$idColumn;
-		$out = static::modelName()." #".$this->$idColumn.":\n";
-		foreach (get_object_vars($this) as $var => $val)
-			if (isset($this->$var) && $this->$var) $out.= " - ".$var." = ".print_r($val, true)."\n";
-		
-		return $out;
 	}
 	
 	/**
@@ -440,57 +512,52 @@ class Model
 	 */
 	protected function decodeValue($val, $column = "")
 	{
-		if (isset(static::$casts[$column]))	settype($val, static::$casts[$column]);
-		if (in_array($column, static::$jsons) && is_string($val)) $val = json_decode(unescape_unicode($val));
+		if ($column === static::$idColumn)
+			$val = (int)$val;
+		if (isset(static::$casts[$column]))
+			settype($val, static::$casts[$column]);
+		if (in_array($column, static::$jsons) && is_string($val))
+			$val = from_json($val);
+		
 		return $val;
 	}
 
 	/**
-	 * Convert column to string
+	 * Get column value
 	 * 
-	 * @param mixed $column name of the column
+	 * @param string $column name of the column
 	 * 
 	 * @return string
 	 */
 	protected function encodeValue($column)
 	{
-		return !isset($this->$column) ? null : (
-			in_array($column, static::$jsons) ? escape_unicode(json_encode($this->$column)) : (
-				$this->$column
-			)
-		);
+		$val = in_array($column, static::$jsons) ? to_json($this->$column) : $this->$column;
+		// Convert bools to ints
+		if (is_bool($val)) $val = (int)$val;
+		return $val;
 	}
 
 	/**
 	 * Return name of table columns
 	 * 
-	 * @return string[]|null
+	 * @return array|false if query fails
 	 */
 	protected static function tableColumns()
 	{
-		// Global instance
+		// Database config
 		global $dbConfig;
 
 		$query = Db::instance(static::$dbName)->prepare("
-		SELECT COLUMN_NAME
-		FROM INFORMATION_SCHEMA.COLUMNS
-		WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = :tableName
+			select column_name, column_key
+			from information_schema.columns
+			where table_schema = :schema and table_name = :table
 		");
 		$query->bindValue(":schema", $dbConfig[static::$dbName]["schema"]);
-		$query->bindValue(":tableName", static::tableName());
+		$query->bindValue(":table", static::tableName());
 
 		if ($query->execute())
-		{
-			$rows = $query->fetchAll(PDO::FETCH_NUM);
-
-			// Populate array
-			$columns = [];
-			foreach ($rows as $row)
-				$columns[] = $row[0];
-			
-			return $columns;
-		}
-
-		return null;
+			return $query->fetchAll(PDO::FETCH_ASSOC);
+		else
+			return false;
 	}
 }
