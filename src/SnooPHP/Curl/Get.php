@@ -23,21 +23,4 @@ class Get extends Curl
 			CURLOPT_RETURNTRANSFER	=> true
 		], $headers, $initOnly);
 	}
-
-	/**
-	 * Create a new session with an authorization header
-	 * 
-	 * @deprecated v0.2.4
-	 * 
-	 * @param string	$url		request url
-	 * @param string	$authKey	authorization key
-	 * @param array		$headers	list of additional http headers
-	 * @param bool		$initOnly	if true the session won't be executed
-	 * 
-	 * @return Get
-	 */
-	public static function withAuth($url, $authKey = "", array $headers = [], $initOnly = false)
-	{
-		return new Get($url, array_merge(["Authorization" => $authKey], $headers), $initOnly);
-	}
 }

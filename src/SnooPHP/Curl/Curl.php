@@ -52,7 +52,7 @@ class Curl
 	 * @param array		$headers	list of http headers
 	 * @param bool		$initOnly	if true the session won't be executed
 	 */
-	public function __construct($url = null, array $options = [], array $headers = [], $initOnly = true)
+	public function __construct($url, array $options = [], array $headers = [], $initOnly = true)
 	{
 		// Init curl session
 		$this->curl = curl_init($this->url = $url);
@@ -230,7 +230,7 @@ class Curl
 	 * Create appropriate session
 	 * 
 	 * @param string		$method		method string
-	 * @param string		$uri		resource uri
+	 * @param string		$url		transfer url
 	 * @param string|array	$data		data to post [default: ""]
 	 * @param array			$headers	set of additional headers [default: []]
 	 * @param array			$options	set of additional options [default: []]
@@ -238,31 +238,31 @@ class Curl
 	 * 
 	 * @return Get|Post|Put|Delete|null null if $method doesn't match any available method
 	 */
-	public static function create($method, $uri, $data = "", array $headers = [], array $options = [], $initOnly = false)
+	public static function create($method, $url, $data = "", array $headers = [], array $options = [], $initOnly = false)
 	{
 		// Null if method is not valid
 		$curl = null;
 
 		// Compare method
 		if (!strcasecmp($method, "GET"))
-			$curl = new static($uri, $options + [
+			$curl = new static($url, $options + [
 				CURLOPT_CUSTOMREQUEST	=> "GET",
 				CURLOPT_RETURNTRANSFER	=> true
 			], $headers, $initOnly);
 		else if (!strcasecmp($method, "POST"))
-			$curl = new static($uri, $options + [
+			$curl = new static($url, $options + [
 				CURLOPT_CUSTOMREQUEST	=> "POST",
 				CURLOPT_POSTFIELDS		=> $data,
 				CURLOPT_RETURNTRANSFER	=> true
 			], $headers, $initOnly);
 		else if (!strcasecmp($method, "PUT"))
-			$curl = new static($uri, $options + [
+			$curl = new static($url, $options + [
 				CURLOPT_CUSTOMREQUEST	=> "PUT",
 				CURLOPT_POSTFIELDS		=> $data,
 				CURLOPT_RETURNTRANSFER	=> true
 			], $headers, $initOnly);
 		else if (!strcasecmp($method, "DELETE"))
-			$curl = new static($uri, $options + [
+			$curl = new static($url, $options + [
 				CURLOPT_CUSTOMREQUEST	=> "DELETE",
 				CURLOPT_RETURNTRANSFER	=> true
 			], $headers, $initOnly);
