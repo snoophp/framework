@@ -15,19 +15,22 @@ class Db
 	 * @param string	$queryString	query string
 	 * @param array		$queryParams	query parameters
 	 * @param string	$dbName			name of the db configuration (default master)
+	 * @param bool		$fetchResults	if true (defaul behaviour) return query results, otherwise just true/false
 	 * 
-	 * @return array
+	 * @return array|bool|int return query results or number of rows affected or false if fails
 	 */
-	public static function query($queryString, array $queryParams = [], $dbName = "master")
+	public static function query($queryString, array $queryParams = [], $dbName = "master", $fetchResults = true)
 	{
 		// Prepare query
 		$query = static::instance($dbName)->prepare($queryString);
 		foreach ($queryParams as $column => $val) $query->bindValue(is_int($column) ? $column + 1 : ":".$column, $val);
 
 		// Execute
-		if ($status = $query->execute())
-			return $query->fetchAll(PDO::FETCH_ASSOC);
-
+		if ($query->execute())
+			return $fetchResults ?
+			$query->fetchAll(PDO::FETCH_ASSOC) :
+			$query->rowCount();
+		
 		return false;
 	}
 
@@ -65,48 +68,6 @@ class Db
 	public static function rollBack($dbName = "master")
 	{
 		return static::instance($dbName)->rollBack();
-	}
-
-	/**
-	 * Get or set a connection attribute
-	 * 
-	 * If attribute value is specified as an array setAttribute is called on its elements
-	 * If attribute value is specified setAttribute is called on attribute name
-	 * If attribute name is specified as an array getAttribute is called on its elements and an array is returned
-	 * If attribute name is specified its value is returned
-	 * 
-	 * @param int|array		$attributeName	attribute name (eg. ATTR_*)
-	 * @param mixed|array	$attributeValue	attribute value
-	 * @param string		$dbName 		name of the db configuration (default master)
-	 * 
-	 * @return bool|array
-	 */
-	public static function attribute($attributeName, $attributeValue = null, $dbName = "master")
-	{
-		$db = static::instance($dbName);
-
-		// Set
-		if ($attributeValue)
-		{
-			if (is_array($attributeValue))
-			{
-				$result = true;
-				foreach($attributeValue as $attr => $val) $result &= $db->setAttribute($attr, $val);
-				if (!$result) return false;
-			}
-			else
-				if (!$result = $db->setAttribute($attributeName, $attributeValue)) return false;
-		}
-
-		// Get
-		if (is_array($attributeName))
-		{
-			$attributes = [];
-			foreach ($attributeName as $attribute) $attributes[] = $db->getAttribute($attribute);
-			return $attributes;
-		}
-		else
-			return $db->getAttribute($attributeName);
 	}
 
 	/**
