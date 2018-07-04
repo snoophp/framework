@@ -10,7 +10,7 @@ if (!function_exists("compile_style"))
 	 * 
 	 * @return string compiled content
 	 */
-	function compile_style()
+	function compile_style($content, $lang)
 	{
 		$compiled	= $content;
 		$content	= preg_replace("/\"/", "\\\"", $content);

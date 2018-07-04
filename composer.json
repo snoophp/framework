@@ -19,7 +19,10 @@
         }
     ],
     "require": {
-		"php": ">7.0"
+		"php": ">=7.0",
+		"ext-PDO": "*",
+		"ext-curl": "*",
+		"ext-json": "*"
 	},
 	"replace": {
 		"snoophp/curl": "self.version",
@@ -30,7 +33,8 @@
 	},
 	"autoload": {
 		"files": [
-			"src/SnooPHP/Utils/helpers.php"
+			"src/SnooPHP/Utils/helpers.php",
+			"src/SnooPHP/Http/helpers.php"
 		],
         "psr-4": {
             "SnooPHP\\": "src/SnooPHP/"
