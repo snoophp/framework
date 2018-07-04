@@ -14,11 +14,14 @@
         }
     ],
     "require": {
-		"php": ">7.0",
+		"php": ">=7.0",
 		"snoophp/curl": "*",
 		"snooophp/utils": "*"
 	},
 	"autoload": {
+		"files": [
+			"helpers.php"
+		],
         "psr-4": {
             "SnooPHP\\Http\\": ""
         }

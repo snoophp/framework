@@ -2,7 +2,6 @@
 
 namespace SnooPHP\Git;
 
-use SnooPHP\Utils\Utils;
 use SnooPHP\Http\Request;
 use SnooPHP\Http\Response;
 
@@ -43,7 +42,7 @@ class GitHubWebhook extends Webhook
 		$ip			= $request->header("Remote Address") ?: $request->header("X-Client-Ip") ?: $request->header("X-Forwarded-For");
 		if ($ip && $webhookConfig["strong_ip_validation"])
 		{
-			foreach ($webhookConfig["whitelist"] as $test) $allowed = $allowed || Utils::validateIp($ip, $test);
+			foreach ($webhookConfig["whitelist"] as $test) $allowed = $allowed || validate_ip($ip, $test);
 			if (!$allowed) Response::abort(403, [
 				"status"		=> "ERROR",
 				"description"	=> "ip not whitelisted"

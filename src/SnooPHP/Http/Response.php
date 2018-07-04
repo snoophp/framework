@@ -2,8 +2,6 @@
 
 namespace SnooPHP\Http;
 
-use SnooPHP\Utils\Utils;
-
 /**
  * Response to send to the client
  * 
@@ -174,7 +172,7 @@ class Response
 		// Return json content
 		return new static(
 			to_json($content),
-			200,
+			$code,
 			["Content-Type" => "application/json; charset=utf-8"]
 		);
 	}

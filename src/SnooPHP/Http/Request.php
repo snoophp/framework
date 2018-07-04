@@ -2,7 +2,6 @@
 
 namespace SnooPHP\Http;
 
-use SnooPHP\Utils\Utils;
 use SnooPHP\Curl\Curl;
 
 /**
@@ -202,7 +201,7 @@ class Request
 			default:
 				parse_str(file_get_contents("php://input"), $raw);
 		}
-		foreach ($raw as $input => $val) $inputs[$input] = Utils::parseValue($val);
+		foreach ($raw as $input => $val) $inputs[$input] = parse_string($val);
 
 		// Populate files
 		foreach ($_FILES as $name => $file) $files[$name] = $file;

@@ -15,6 +15,8 @@ class Utils
 	/**
 	 * Include view
 	 * 
+	 * @deprecated v1.0.0
+	 * 
 	 * @param string	$name		view name
 	 * @param array		$args		arguments to expose
 	 * @param Request	$request	request if differs from current request
@@ -35,31 +37,9 @@ class Utils
 	}
 
 	/**
-	 * Include a vue component
-	 * 
-	 * @param string	$file		component file path
-	 * @param array		$args		arguments to expose
-	 * @param Request	$request	request if differs from current request
-	 * 
-	 * @return bool
-	 */
-	public static function vueComponent($file, array $args, Request $request = null)
-	{
-		$request	= $request ?: Request::current();
-		$file		= substr($file, 0, 2) === "@/" ? path("views/components/".substr($file, 2).".vue.php") : $file;
-		$component	= new Component($file, $args, $request);
-		if ($component->valid())
-		{
-			// Register component
-			$GLOBALS["vue"]->register($component);
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
 	 * Compile style content using specified css preprocessor
+	 * 
+	 * @deprecated v1.0.0
 	 * 
 	 * @param string	$content	content to compile
 	 * @param string	$lang		css preprocessor (default to vanilla css, no process)
@@ -68,37 +48,7 @@ class Utils
 	 */
 	public static function compileStyle($content, $lang = "vanilla")
 	{
-		$compiled	= $content;
-		$content	= preg_replace("/\"/", "\\\"", $content);
-		switch ($lang) {
-			case "lessc":
-			case "less":
-				if (empty(`which lessc`))
-				{
-					error_log("lessc module not found (run `npm i -g lessc` to install)");
-					break;
-				}
-
-				$compiled = `echo "$content" | lessc - --compress`;
-				break;
-			
-			case "stylus":
-				if (empty(`which stylus`))
-				{
-					error_log("stylus module not found (run `npm i -g stylus` to install)");
-					break;
-				}
-
-				$compiled = `echo "$content" | stylus --compress`;
-				break;
-			
-			default:
-				/* Nothing to compile */
-				break;
-		}
-
-		// Return result
-		return $compiled;
+		return compile_style($content, $lang);
 	}
 
 	/**
@@ -112,35 +62,6 @@ class Utils
 			return `echo "$content" | uglifyjs --compress --mangle --mangle-props`;
 
 		return $content;
-	}
-
-	/**
-	 * Convert to json string
-	 * 
-	 * @deprecated 1.0.1
-	 * 
-	 * @param mixed $content content to convert
-	 * 
-	 * @return string
-	 */
-	public static function toJson($content)
-	{
-		return to_json($content);
-	}
-
-	/**
-	 * Decode from json string
-	 * 
-	 * @deprecated 1.0.1
-	 * 
-	 * @param string	$content	content to decode
-	 * @param bool		$assoc		if true return array rather than object
-	 * 
-	 * @return object|array
-	 */
-	public static function fromJson($content, $assoc = false)
-	{
-		return from_json($content, $assoc);
 	}
 
 	/**
@@ -183,44 +104,14 @@ class Utils
 	/**
 	 * Parse string as value
 	 * 
+	 * @deprecated v1.0.0
+	 * 
 	 * @param string $val string to parse
 	 * 
 	 * @return mixed
 	 */
 	public static function parseValue($val)
 	{
-		$val = trim($val);
-		if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))				return strcasecmp($val, "TRUE") === 0 || strcasecmp($val, "ON") === 0;
-		else if (preg_match("/^[0-9]+$/", $val) && strlen($val) < 16)	return (int)$val;
-		else if (preg_match("/^[0-9]*\.(?:[0-9]+f?|f)$/", $val))		return (float)$val;
-
-		return $val;
-	}
-
-	/**
-	 * Check ip address against a test ip
-	 * 
-	 * Ips should be in x.y.z.x/w form, where w is the mask
-	 * 
-	 * @param string	$ip		ip address to check
-	 * @param string	$test	ip address used as test
-	 * 
-	 * @return bool
-	 */
-	public static function validateIp($ip, $test)
-	{
-		/** @todo not working, I think ... */
-		if (!is_string($ip) || !is_string($test)) return false;
-		$testBytes = preg_split("@(?:\.|/)@", $test);
-		$ipBytes = preg_split("@(?:\.|/)@", $ip);
-		$test = unpack("N", pack("C*", $testBytes[0], $testBytes[1], $testBytes[2], $testBytes[3]))[1];
-		$ip = unpack("N", pack("C*", $ipBytes[0], $ipBytes[1], $ipBytes[2], $ipBytes[3]))[1];
-		if (isset($testBytes[4]) && $mask = (int)$testBytes[4])
-		{
-			$test = $test >> (32 - $mask);
-			$ip = $ip >> (32 - $mask);
-		}
-
-		return $test === $ip;
+		return parse_string($val);
 	}
 }

@@ -1,5 +1,51 @@
 <?php
 
+if (!function_exists("compile_style"))
+{
+	/**
+	 * Compile style content using specified css preprocessor
+	 * 
+	 * @param string	$content	content to compile
+	 * @param string	$lang		css preprocessor (default to vanilla css, no process)
+	 * 
+	 * @return string compiled content
+	 */
+	function compile_style()
+	{
+		$compiled	= $content;
+		$content	= preg_replace("/\"/", "\\\"", $content);
+		switch ($lang) {
+			case "lessc":
+			case "less":
+				if (empty(`which lessc`))
+				{
+					error_log("lessc module not found (run `npm i -g lessc` to install)");
+					break;
+				}
+
+				$compiled = `echo "$content" | lessc - --compress`;
+				break;
+			
+			case "stylus":
+				if (empty(`which stylus`))
+				{
+					error_log("stylus module not found (run `npm i -g stylus` to install)");
+					break;
+				}
+
+				$compiled = `echo "$content" | stylus --compress`;
+				break;
+			
+			default:
+				/* Nothing to compile */
+				break;
+		}
+
+		// Return result
+		return $compiled;
+	}
+}
+
 if (!function_exists("from_json"))
 {
 	/**
@@ -48,6 +94,33 @@ if (!function_exists("mime_type"))
 		}
 
 		return $type;
+	}
+}
+
+if (!function_exists("parse_string"))
+{
+	/**
+	 * Attempt to parse string and cast it
+	 * 
+	 * @param string $value
+	 * 
+	 * @return mixed
+	 */
+	function parse_string($value)
+	{
+		$val = trim($value);
+		// Return boolean
+		if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))
+			return !strcasecmp($val, "TRUE") || !strcasecmp($val, "ON") ? true : false;
+		// Return integer
+		if (preg_match("/^[0-9]+$/", $val) && strlen($val) < 16)
+			return (int)$val;
+		// Return float
+		if (preg_match("/^[0-9]*\.(?:[0-9]+f?|f)+$/", $val))
+			return (float)$val;
+		
+		// Return string
+		return $value;
 	}
 }
 
@@ -149,11 +222,23 @@ if (!function_exists("view"))
 	/**
 	 * Include view
 	 * 
-	 * @see SnooPHP\Utils::view()
+	 * @param string	$name		view name
+	 * @param array		$args		arguments to expose
+	 * @param Request	$request	request if differs from current request
+	 * 
+	 * @return bool
 	 */
 	function view($name, array $args = [], SnooPHP\Http\Request $request = null)
 	{
-		SnooPHP\Utils::view($name, $args, $request);
+		$request = $request ?: Request::current();
+		$fullPath = path("views")."/{$name}.php";
+		if (file_exists($fullPath))
+		{
+			include $fullPath;
+			return true;
+		}
+
+		return false;
 	}
 }
 
