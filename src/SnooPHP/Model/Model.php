@@ -22,7 +22,17 @@ class Model
 	/**
 	 * @var array $casts list of columns to cast and target type
 	 */
-	protected static $casts = [];
+	protected static $casts = [
+		"id" => "int"
+	];
+
+	/**
+	 * @var array $autos list of columns that have an auto value on update (i.e. 'modified_at' timestamp)
+	 */
+	protected static $autos = [
+		"created_at",
+		"updated_at"
+	];
 
 	/**
 	 * @var array $casts list of columns to be converted from json
@@ -30,12 +40,7 @@ class Model
 	protected static $jsons = [];
 
 	/**
-	 * @var array $autos list of columns that have an auto value on update (i.e. 'modified_at' timestamp)
-	 */
-	protected static $autos = [];
-
-	/**
-	 * @var string $dbName name of the database @todo not implemented yet
+	 * @var string $dbName name of the database
 	 */
 	protected static $dbName = "master";
 
@@ -239,6 +244,7 @@ class Model
 		$updates	= "";
 		$condition	= "";
 		$params		= [];
+		$primaries	= [];
 		$updateCondition = "";
 
 		// Remove columns for which no value is specified
@@ -262,6 +268,9 @@ class Model
 			{
 				$updateCondition .= "$name = :$name and ";
 
+				if (property_exists($this, $name) && !in_array($name, static::$autos))
+					$primaries[$name] = $this->encodeValue($name);
+
 				// Check if is model with id column
 				if ($name === $idColumn) $isModel = true;
 			}
@@ -276,6 +285,7 @@ class Model
 
 		try
 		{
+			// Try to insert model
 			$status = Db::query("
 				insert into $tableName ($into)
 				values ($values)
@@ -306,56 +316,11 @@ class Model
 			$lastInsertId = Db::instance(static::$dbName)->lastInsertId();
 
 			if ($lastInsertId > 0)
+				// Fetch with inserted id
 				return static::find($lastInsertId);
 			else
-				return static::select("where $condition", $params, static::$dbName)->first();
-		}
-		else
-			return false;
-		
-		// Update model with id column
-		if (isset($this->$idColumn))
-			$status = Db::query("
-				update $tableName
-				set $updates
-				where $idColumn = :$idColumn
-			", $params, static::$dbName, false) !== false;
-		
-		// Create model with id column
-		else if ($isModel)
-			$status = Db::query("
-				insert into $tableName ($into)
-				values ($values)
-			", $params, static::$dbName, false) !== false;
-
-		// Create generic model
-		else if ($create)
-			$status = Db::query("
-				insert into $tableName ($into)
-				values ($values)
-			", $params, static::$dbName, false) !== false;
-
-		// Update generic model
-		else
-			$status = Db::query("
-				update $tableName
-				set $updates
-				where $updateCondition
-			", $params, static::$dbName, false) !== false;
-
-		if ($status)
-		{
-			// Try to fetch model with id
-			if ($isModel)
-			{
-				// Set id and fetch
-				$this->$idColumn = Db::instance(static::$dbName)->lastInsertId();
-				return static::find($this->$idColumn);
-			}
-			else
-			{
-				return static::select("where $condition", $params, static::$dbName)->first();
-			}
+				// If no last inserted if try to use update condition and primary keys
+				return static::select("where $updateCondition", $primaries, static::$dbName)->first();
 		}
 		else
 			return false;

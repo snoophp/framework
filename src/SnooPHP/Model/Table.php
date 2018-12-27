@@ -89,7 +89,7 @@ class Table
 	 */
 	public function id($name = "id", $size = 16)
 	{
-		$this->add($name, "int")->size(16)->unsigned()->autoIncrement()->primary();
+		$this->add($name, "int")->size($size)->unsigned()->autoIncrement()->primary();
 	}
 
 	/**
@@ -97,7 +97,7 @@ class Table
 	 */
 	public function timestamps()
 	{
-		$this->timestamp("created_at")->onUpdate();
+		$this->timestamp("created_at");
 		$this->timestamp("updated_at")->onUpdate();
 	}
 
@@ -240,6 +240,106 @@ class Table
 	}
 
 	///////////////// END COLUMNS /////////////////
+
+	/**
+	 * Generate table data (i.e. columns and constraints) from table description
+	 * 
+	 * Note that it's a WIP, not all standard features
+	 * are supported
+	 * 
+	 * @param string $tableDesc table description
+	 */
+	public function generate($tableDesc)
+	{
+		// Table description is analyzed line-by-line
+		$lfcr = "\r\n";
+		$line = strtok($tableDesc, $lfcr);
+
+		while ($line)
+		{
+			// Run regex
+			if (preg_match("/^^\s*(?<name>\w*)(?<required>\*)?\s*(?:->\s*(?<ref_class>[\w\\\\]+)(?:::(?<ref_column>\w+))?(?:\(\s*(?<on_delete>[\w\ ]+)\s*(?:,\s*(?<on_update>[\w\ ]+))?\s*\))?)?(?:\s+(?<key_mod>[PU])(?<key_comp>[\+;])?)?\s*:\s*(?<type>\w+)(?:\((?<size>\d+)\))?(?:\s*=\s*(?<default>(?:\".*\")|'.*'|(?:\w+\s*)+))?\s*[,;]?/", trim($line), $matches))
+			{
+				// Required fields are name and type
+				$name		= $matches["name"];
+				$required	= $matches["required"] ? true : null;
+				$refClass	= $matches["ref_class"] ?? null;
+				$refColumn	= $matches["ref_column"] ?? null;
+				$onDelete	= $matches["on_delete"] ?? null;
+				$onUpdate	= $matches["on_update"] ?? null;
+				$keyMod		= $matches["key_mod"] ?? null;
+				$keyComp	= $matches["key_comp"] ?? null;
+				$type		= $matches["type"];
+				$size		= $matches["size"] ?? null;
+				$default	= $matches["default"] ?? null;
+
+				// Special cases first
+				if ($type === "id")
+					$this->id($name ?: "id", $size ?: 16);
+
+				else if ($type === "timestamps")
+					$this->timestamps();
+
+				else if (method_exists($this, $type))
+				{
+					// Create default column
+					$col = $this->{$type}($name);
+
+					// Is required?
+					if ($required)
+						$col->notNullable();
+
+					// Type size
+					if ($size)
+						$col->size($size);
+
+					// Default value
+					if ($default)
+						$col->default($default);
+					
+					// Reference constraint
+					if ($refClass)
+						$col->references($refClass, $refColumn ?: "id", $onDelete ?: "no action", $onUpdate ?: "no action");
+
+					// Primary and unique key constraints
+					if ($keyMod)
+					{
+						switch ($keyMod)
+						{
+							case 'P':
+							{
+								if (!$keyComp)
+									$col->primary();
+								else if ($keyComp === '+')
+									$col->primaryComposite(false);
+								else if ($keyComp === ';')
+									$col->primaryComposite(true);
+								
+								break;
+							}
+
+							case 'U':
+							{
+								if (!$keyComp)
+									$col->unique();
+								else if ($keyComp === '+')
+									$col->uniqueComposite(false);
+								else if ($keyComp === ';')
+									$col->uniqueComposite(true);
+
+								break;
+							}
+						}
+					}
+				}
+				else
+					error_log("type {$type} is not supported");
+			}
+
+			// Next line
+			$line = strtok($lfcr);
+		}
+	}
 
 	/**
 	 * Compute dependencies
@@ -640,8 +740,9 @@ class Column
 	 */
 	public function __construct($name, $type, array $properties = [])
 	{
-		$this->name	= $name;
-		$this->type	= $type;
+		$this->name			= $name;
+		$this->type			= $type;
+		$this->properties	= $properties;
 	}
 
 	/**
@@ -802,15 +903,16 @@ class Column
 	/**
 	 * Make foreign key
 	 * 
-	 * @param string		$table		name of foreign table
+	 * @param string		$model		model or name of foreign table
 	 * @param string		$column		name of foreign column
 	 * @param string|null	$onDelete	on delete option
 	 * @param string|null	$onUpdate	on update option
 	 * 
 	 * @return Column
 	 */
-	public function references($table, $column, $onDelete = "no action", $onUpdate = "no action")
+	public function references($model, $column = "id", $onDelete = "no action", $onUpdate = "no action")
 	{
+		$table = class_exists($model) ? $model::tableName() : $model;
 		return $this->set("foreign", [
 			"table"		=> $table,
 			"column"	=> $column,
@@ -824,14 +926,15 @@ class Column
 	 * 
 	 * @param string		$column		name of foreign column
 	 * @param bool			$closeChain close composite chain
-	 * @param string		$table		name of foreign table
+	 * @param string		$model		model or name of foreign table
 	 * @param string|null	$onDelete	on delete option
 	 * @param string|null	$onUpdate	on update option
 	 * 
 	 * @return Column
 	 */
-	public function referencesComposite($column, $closeChain = false, $table = "table", $onDelete = "no action", $onUpdate = "no action")
+	public function referencesComposite($column, $closeChain = false, $model = "table", $onDelete = "no action", $onUpdate = "no action")
 	{
+		$table = class_exists($model) ? $model::tableName() : $model;
 		return $this->set("foreignComposite", [
 			"closeChain"	=> $closeChain,
 			"table"			=> $table,

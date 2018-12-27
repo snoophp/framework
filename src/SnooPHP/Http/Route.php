@@ -154,6 +154,9 @@ class Route
 		{
 			foreach ($matches as $name => $val)
 			{
+				// Decode url
+				$val = urldecode($val);
+				
 				// Discard non-associative indexes
 				if (is_int($name))
 				{
