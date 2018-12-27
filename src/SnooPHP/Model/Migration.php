@@ -28,13 +28,23 @@ class Migration
 	 * @param string	$dbName	db connection name
 	 * @param Table[]	$tables	list of tables to register
 	 */
-	public function __construct($dbName = "master", array $tables = [])
+	public function __construct(array $argv = [], array $tables = [])
 	{
-		$this->dbName = $dbName;
+		// Parse arguments
+		$args = parse_args($argv, [
+			"d"	=> basename($argv[0] ?? "master", ".php")
+		]);
+
+		// Initial values
+		$this->dbName = $args["params"]["d"];
 		$this->tables = $tables;
 
 		// Compute tables dependencies
 		foreach ($tables as $table) $table->generateDependencies();
+
+		// If command specified, run command
+		if ($args["arg"])
+			$this->run($args["arg"]);
 	}
 
 	/**
