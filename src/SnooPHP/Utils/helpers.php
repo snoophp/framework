@@ -185,7 +185,19 @@ if (!function_exists("parse_string"))
 	{
 		if (is_string($value))
 		{
+			// Decoding from json does it automatically for us
+			// In addition also decodes json objects!
 			$val = trim($value);
+			if (strcasecmp($val, "null") === 0)
+				return null;
+			else
+			{
+				$val = from_json(trim($value));
+				return $val ?: $value;
+			}
+
+			/// LEGACY CODE
+
 			// Return boolean
 			if (preg_match("/^(?:TRUE|FALSE|ON|OFF)$/i", $val))
 				return !strcasecmp($val, "TRUE") || !strcasecmp($val, "ON") ? true : false;
