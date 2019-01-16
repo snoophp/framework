@@ -40,11 +40,6 @@ class Model
 	protected static $jsons = [];
 
 	/**
-	 * @var string $dbName name of the database
-	 */
-	protected static $dbName = "master";
-
-	/**
 	 * Create a new model
 	 * 
 	 * @param array $values associative array column => value
@@ -70,7 +65,7 @@ class Model
 			select $tableName.*
 			from $tableName
 			$queryString
-		", $queryParams, static::$dbName);
+		", $queryParams, static::getDbName());
 
 		if ($rows === false)
 			return false;
@@ -107,7 +102,7 @@ class Model
 			select *
 			from $tableName
 			where $idColumn = :id
-		", ["id" => $id], static::$dbName);
+		", ["id" => $id], static::getDbName());
 
 		if ($rows === false)
 			return false;
@@ -139,7 +134,7 @@ class Model
 			select F.*
 			from $refTable as R, $forTable as F
 			where R.$refColumn = F.$forColumn and R.$refColumn = :id
-		", ["id" => $this->$refColumn], static::$dbName);
+		", ["id" => $this->$refColumn], static::getDbName());
 
 		if ($rows === false)
 			return false;
@@ -173,7 +168,7 @@ class Model
 			select F.*
 			from $refTable as R, $forTable as F
 			where R.$refColumn = F.$forColumn and R.$refColumn = :id $condition
-		", array_merge(["id" => $this->$refColumn], $conditionParams), static::$dbName);
+		", array_merge(["id" => $this->$refColumn], $conditionParams), static::getDbName());
 
 		if ($rows === false)
 			return false;
@@ -212,7 +207,7 @@ class Model
 			select R.*
 			from $refTable as R, $forTable as F
 			where R.$refColumn = F.$forColumn and F.$forColumn = :id
-		", ["id" => $this->$forColumn], static::$dbName);
+		", ["id" => $this->$forColumn], static::getDbName());
 
 		if ($rows === false)
 			return false;
@@ -289,7 +284,7 @@ class Model
 			$status = Db::query("
 				insert into $tableName ($into)
 				values ($values)
-			", $params, static::$dbName, false) !== false;
+			", $params, static::getDbName(), false) !== false;
 		}
 		catch (PDOException $e)
 		{
@@ -304,7 +299,7 @@ class Model
 					update $tableName
 					set $updates
 					where $updateCondition
-				", $params, static::$dbName, false) !== false;
+				", $params, static::getDbName(), false) !== false;
 			}
 			else
 				throw $e;
@@ -313,14 +308,14 @@ class Model
 		if ($status)
 		{
 			// Get last insert id
-			$lastInsertId = Db::instance(static::$dbName)->lastInsertId();
+			$lastInsertId = Db::instance(static::getDbName())->lastInsertId();
 
 			if ($lastInsertId > 0)
 				// Fetch with inserted id
 				return static::find($lastInsertId);
 			else
 				// If no last inserted if try to use update condition and primary keys
-				return static::select("where $updateCondition", $primaries, static::$dbName)->first();
+				return static::select("where $updateCondition", $primaries, static::getDbName())->first();
 		}
 		else
 			return false;
@@ -344,7 +339,7 @@ class Model
 			$status = Db::query("
 				delete from $tableName
 				where $idColumn = :id
-			", ["id" => $this->$idColumn], static::$dbName, false);
+			", ["id" => $this->$idColumn], static::getDbName(), false);
 		}
 		else
 		{
@@ -371,7 +366,7 @@ class Model
 			$status = Db::query("
 				delete from $tableName
 				where $condition
-			", $params, static::$dbName, false);
+			", $params, static::getDbName(), false);
 		}
 
 		return $status !== false && $status > 0;
@@ -390,12 +385,12 @@ class Model
 		$tableName = static::tableName();
 		
 		if (empty($condition))
-			return Db::query("delete from $tableName", [], static::$dbName, false);
+			return Db::query("delete from $tableName", [], static::getDbName(), false);
 		else
 			return Db::query("
 				delete from $tableName
 				where $condition
-			", $conditionParams, static::$dbName, false);
+			", $conditionParams, static::getDbName(), false);
 	}
 
 
@@ -407,7 +402,7 @@ class Model
 	public static function purge()
 	{
 		$tableName = static::tableName();
-		return Db::query("truncate $tableName", [], static::$dbName, false) !== false;
+		return Db::query("truncate $tableName", [], static::getDbName(), false) !== false;
 	}
 
 	/**
@@ -418,13 +413,30 @@ class Model
 	public static function resetAutoIncrement()
 	{
 		$tableName = static::tableName();
-		return Db::query("alter table $tableName auto_increment = 1", [], static::$dbName, false) !== false;
+		return Db::query("alter table $tableName auto_increment = 1", [], static::getDbName(), false) !== false;
+	}
+
+	/**
+	 * Get and/or set the name of the database connection
+	 * 
+	 * @param string|null $dbName database connection to use
+	 * 
+	 * @return string current connection
+	 */
+	public static function getDbName($dbName = null)
+	{
+		// Return name of current connection
+		// If no connection is specified by the class
+		// use global defined connection
+		// If no global connection is defined
+		// use "master"
+		return !empty(static::$dbName) ? static::$dbName : ($GLOBALS["defaultDbName"] ?? "master");
 	}
 
 	/**
 	 * Set database connection to use
 	 * 
-	 * @param string $dbName database connection to use
+	 * @param string|null $dbName database connection to use
 	 */
 	public static function setDbName($dbName = "master")
 	{
@@ -479,9 +491,22 @@ class Model
 	{
 		if ($column === static::$idColumn)
 			$val = (int)$val;
-		if (isset(static::$casts[$column]))
-			settype($val, static::$casts[$column]);
-		if (in_array($column, static::$jsons) && is_string($val))
+		else if (isset(static::$casts[$column]))
+		{
+			switch (static::$casts[$column])
+			{
+				case "object":
+					$val = from_json($val, false);
+					break;
+				case "array":
+					$val = from_json($val, true);
+					break;
+				default:
+					settype($val, static::$casts[$column]);
+			}
+		}
+		/// We leave it for compatibility
+		else if (in_array($column, static::$jsons) && is_string($val))
 			$val = from_json($val);
 		
 		return $val;
@@ -496,9 +521,16 @@ class Model
 	 */
 	protected function encodeValue($column)
 	{
+		/// @todo for compatibility
 		$val = in_array($column, static::$jsons) ? to_json($this->$column) : $this->$column;
+
+		// Convert jsons into valid json strings
+		if (isset(static::$casts[$column]) && (static::$casts[$column] === "object" || static::$casts[$column] === "array"))
+			$val = to_json($this->$column);
+
 		// Convert bools to ints
 		if (is_bool($val)) $val = (int)$val;
+
 		return $val;
 	}
 
@@ -512,12 +544,12 @@ class Model
 		// Database config
 		global $dbConfig;
 
-		$query = Db::instance(static::$dbName)->prepare("
+		$query = Db::instance(static::getDbName())->prepare("
 			select column_name, column_key
 			from information_schema.columns
 			where table_schema = :schema and table_name = :table
 		");
-		$query->bindValue(":schema", $dbConfig[static::$dbName]["schema"]);
+		$query->bindValue(":schema", $dbConfig[static::getDbName()]["schema"]);
 		$query->bindValue(":table", static::tableName());
 
 		if ($query->execute())
